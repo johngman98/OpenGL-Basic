@@ -16,7 +16,7 @@ Mesh::~Mesh()
 {
 }
 
-void Mesh::Draw(const Shader& shader) const
+void Mesh::Draw(const Shader& shader, bool isElement) const
 {
 	if (m_IsSetUp)
 	{
@@ -32,7 +32,14 @@ void Mesh::Draw(const Shader& shader) const
 			m_Textures[i].bind();
 		}
 		//Draw
-		glDrawElements(GL_TRIANGLES, m_Indices.size(), GL_UNSIGNED_INT, 0);
+		if (isElement)
+		{
+			glDrawElements(GL_TRIANGLES, m_Indices.size(), GL_UNSIGNED_INT, 0);
+		}
+		else
+		{
+			glDrawArrays(GL_TRIANGLES, 0, m_Vertices.size());
+		}
 	}
 	else
 	{

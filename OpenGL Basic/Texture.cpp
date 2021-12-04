@@ -4,7 +4,7 @@
 
 
 Texture::Texture(const std::string& path, const std::string& type)
-	:m_Unit(0), m_Type(type) //default unit 0
+	:m_Unit(0), m_Type(type), m_ID(0) //default unit 0
 {
 	//read the image file and store it
 	stbi_set_flip_vertically_on_load(true);
