@@ -183,7 +183,14 @@ int main(void)
 		4, 6, 7
 	};
 
-
+	/*Cube*/
+	std::vector<Vertex> cubeVert = loadObj("suzanne.obj");
+	std::vector<GLuint>cubeIndices;
+	for (size_t i = 0; i < cubeVert.size(); i++)
+	{
+		cubeIndices.push_back(i);
+	}
+	
 
 
 	//window object
@@ -231,7 +238,7 @@ int main(void)
 
 	
 	//Mesh
-	Mesh mesh1(vertices, indices, textures);
+	Mesh mesh1(cubeVert, cubeIndices, textures);
 	mesh1.setUp(shader);
 
 	//Camera
@@ -252,7 +259,7 @@ int main(void)
 
 	//Light source object
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPosition = glm::vec3(0.5f, 0.5f, 0.5f);
+	glm::vec3 lightPosition = glm::vec3(1.0f, 1.0f, 1.0f);
 	glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
 
 	Shader lightShader("LightVert.Shader", "LightFrag.Shader");
@@ -317,12 +324,12 @@ int main(void)
 		//update cam pos for lighting
 		shader.setUniform3f("cameraPosition", camera.getPosition());
 		shader.setUniformMatrix4fv("view", camView);
-		mesh1.Draw(shader);
+		mesh1.Draw(shader, false);
 	
 		//Draw light source
 		lightShader.bindProgram();
 		lightShader.setUniformMatrix4fv("lightView", camView);
-		lightMesh.Draw(lightShader);
+		lightMesh.Draw(lightShader, true);
 	
 		
 		

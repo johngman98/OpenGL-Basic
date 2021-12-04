@@ -25,7 +25,7 @@ public:
 	~Mesh();
 
 	/*Draw method*/
-	void Draw(const Shader& shader) const;
+	void Draw(const Shader& shader, bool isElement) const;
 
 	/*Setters and Getters*/
 	void setUp(const Shader& shader);
