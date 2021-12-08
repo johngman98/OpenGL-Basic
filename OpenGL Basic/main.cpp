@@ -238,8 +238,7 @@ int main(void)
 
 	
 	//Mesh
-	Mesh mesh1(cubeVert, cubeIndices, textures);
-	mesh1.setUp(shader);
+	Mesh mesh1(vertices, indices, textures, shader);
 
 	//Camera
 	Camera camera(glm::vec3(0.0f, 1.0f, 2.0f), 5.0f, 0.1f);
@@ -259,14 +258,13 @@ int main(void)
 
 	//Light source object
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPosition = glm::vec3(1.0f, 1.0f, 1.0f);
+	glm::vec3 lightPosition = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
 
 	Shader lightShader("LightVert.Shader", "LightFrag.Shader");
 	
 	//light mesh
-	Mesh lightMesh(lightVertices, lightIndices);
-	lightMesh.setUp(lightShader);
+	Mesh lightMesh(lightVertices, lightIndices, lightShader);
 
 	glm::mat4 lightModel = glm::translate(glm::mat4(1.0f), lightPosition);
 	glm::mat4 lightView = view; 
@@ -274,7 +272,7 @@ int main(void)
 
 	lightShader.bindProgram();
 	lightShader.setUniformMatrix4fv("lightModel", lightModel);
-	lightShader.setUniformMatrix4fv("lightView", lightView);
+	lightShader.setUniformMatrix4fv("view", lightView);
 	lightShader.setUniformMatrix4fv("lightProj", lightProj);
 	lightShader.unbindProgram();
 
@@ -317,25 +315,15 @@ int main(void)
 
 		//Camera
 		camera.processInputs(window, WIDTH, HEIGHT, deltaTime);
-		glm::mat4 camView = camera.calculateViewMatrix();
 		
 		//Draw an object
-		shader.bindProgram();
-		//update cam pos for lighting
-		shader.setUniform3f("cameraPosition", camera.getPosition());
-		shader.setUniformMatrix4fv("view", camView);
-		mesh1.Draw(shader, false);
+		mesh1.Draw(shader, camera);
 	
 		//Draw light source
-		lightShader.bindProgram();
-		lightShader.setUniformMatrix4fv("lightView", camView);
-		lightMesh.Draw(lightShader, true);
+		lightMesh.Draw(lightShader, camera, true);
 	
 		
-		
-		//using draw array
-		//glDrawArrays(GL_TRIANGLES, 0, 6);
-		
+
 		//Swap front and back buffers
 		glfwSwapBuffers(window);
 
@@ -344,6 +332,9 @@ int main(void)
 	}
 
 	//cleaning up
+	lightShader.deleteProgram();
+	shader.deleteProgram();
+
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	std::cout << "--------------END of main function-----------" << std::endl;

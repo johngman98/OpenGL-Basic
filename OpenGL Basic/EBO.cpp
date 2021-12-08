@@ -12,17 +12,23 @@ EBO::EBO(const std::vector<GLuint>& indices)
 
 EBO::~EBO()
 {
-	glDeleteBuffers(1, &m_ID);
+	//be very aware of this
+	//glDeleteBuffers(1, &m_ID);
 }
 
-void EBO::bind()
+void EBO::bind() const
 {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ID);
 }
 
-void EBO::unbind()
+void EBO::unbind() const
 {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void EBO::del() const
+{
+	glDeleteBuffers(1, &m_ID);
 }
 
 GLuint EBO::getID()

@@ -2,49 +2,49 @@
 
 
 
-Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices)
-	:m_Vertices(vertices), m_Indices(indices), m_Textures({}), m_IsSetUp(false)
-{	
+Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices, const Shader& shader)
+	:m_Vertices(vertices), m_Indices(indices), m_Textures({})
+{
+	//VBOs and EBOs are in setUp's scope which can be problematic
+	setUp(shader);
 }
 
-Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices, const std::vector<Texture>& textures)
-	:m_Vertices(vertices), m_Indices(indices), m_Textures(textures), m_IsSetUp(false)
+Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices, const std::vector<Texture>& textures, const Shader& shader)
+	:m_Vertices(vertices), m_Indices(indices), m_Textures(textures)
 {
+	setUp(shader);
 }
 
 Mesh::~Mesh()
 {
 }
 
-void Mesh::Draw(const Shader& shader, bool isElement) const
+void Mesh::Draw(const Shader& shader, const Camera& camera, bool isLightSource) const
 {
-	if (m_IsSetUp)
-	{
-		/*Bind program*/
-		shader.bindProgram();
+	/*Bind program*/
+	shader.bindProgram();
 
-		/*Bind Vertext Array Object*/
-		m_VAO.bind();
+	/*Bind Vertext Array Object*/
+	m_VAO.bind();
 
-		/*Bind textures*/
-		for (size_t i = 0; i < m_Textures.size(); i++)
-		{
-			m_Textures[i].bind();
-		}
-		//Draw
-		if (isElement)
-		{
-			glDrawElements(GL_TRIANGLES, m_Indices.size(), GL_UNSIGNED_INT, 0);
-		}
-		else
-		{
-			glDrawArrays(GL_TRIANGLES, 0, m_Vertices.size());
-		}
-	}
-	else
+	/*Bind textures*/
+	for (size_t i = 0; i < m_Textures.size(); i++)
 	{
-		std::cout << "The mesh with ID: " << m_VAO.getID()<< " has NOT been set up" << std::endl;
+		m_Textures[i].bind();
 	}
+
+	/*Take care of camera matrices*/	
+	//camera position for light calculation
+	if (!isLightSource)
+	{
+		shader.setUniform3f("cameraPosition", camera.getPosition());
+	}
+	//TODO: need to add perspective and model matrix
+	//view matrix
+	shader.setUniformMatrix4fv("view", camera.calculateViewMatrix());
+
+	/*Draw*/
+	glDrawElements(GL_TRIANGLES, m_Indices.size(), GL_UNSIGNED_INT, 0);
 }
 
 void Mesh::setUp(const Shader& shader) 
@@ -87,6 +87,4 @@ void Mesh::setUp(const Shader& shader)
 		m_Textures[i].setUnit(shader, type + num, i);
 	}
 	
-	/*Set the flag after setting up*/
-	m_IsSetUp = true;
 }

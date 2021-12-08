@@ -34,7 +34,8 @@ Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
 
 Shader::~Shader()
 {
-	glDeleteProgram(m_ProgramID);
+	//be very aware of this
+	//glDeleteProgram(m_ProgramID);
 }
 
 void Shader::bindProgram() const
@@ -45,6 +46,11 @@ void Shader::bindProgram() const
 void Shader::unbindProgram() const
 {
 	glUseProgram(0);
+}
+
+void Shader::deleteProgram() const
+{
+	glDeleteProgram(m_ProgramID);
 }
 
 GLuint Shader::getProgramID()
