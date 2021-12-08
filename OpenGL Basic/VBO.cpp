@@ -12,7 +12,9 @@ VBO::VBO(const std::vector<Vertex>& vertices)
 
 VBO::~VBO()
 {
-	glDeleteBuffers(1, &m_ID);
+	//be very aware of this
+	//glDeleteBuffers(1, &m_ID);
+	//std::cout << "Deleted VBO" << std::endl;
 }
 
 void VBO::bind() const
@@ -23,6 +25,11 @@ void VBO::bind() const
 void VBO::unbind() const
 {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void VBO::del() const
+{
+	glDeleteBuffers(1, &m_ID);
 }
 
 GLuint VBO::getID() const

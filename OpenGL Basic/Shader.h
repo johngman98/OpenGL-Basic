@@ -19,6 +19,8 @@ public:
 	void bindProgram() const;
 	void unbindProgram() const;
 
+	void deleteProgram() const;
+
 	GLuint getProgramID();
 
 	//set uniform's value

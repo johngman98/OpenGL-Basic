@@ -7,7 +7,8 @@ VAO::VAO()
 
 VAO::~VAO()
 {
-	glDeleteVertexArrays(1, &m_ID);
+	//be very aware of this
+	//glDeleteVertexArrays(1, &m_ID);
 }
 
 void VAO::linkVBO(const VBO& vbo, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset) const
@@ -27,6 +28,11 @@ void VAO::bind() const
 void VAO::unbind() const
 {
 	glBindVertexArray(0);
+}
+
+void VAO::del() const
+{
+	glDeleteVertexArrays(1, &m_ID);
 }
 
 GLuint VAO::getID() const

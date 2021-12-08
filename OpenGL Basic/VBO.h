@@ -2,6 +2,7 @@
 #include<gl/glew.h>
 #include<glm/glm.hpp>
 #include<vector>
+#include<iostream>
 struct Vertex
 {
 	glm::vec3 position;
@@ -16,6 +17,8 @@ public:
 
 	void bind() const; 
 	void unbind() const;
+
+	void del() const;
 
 	GLuint getID() const;
 

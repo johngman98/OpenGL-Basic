@@ -19,15 +19,17 @@ class Mesh
 public:
 	/*Constructors and Deconstructors*/
 
-	Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices);
-	Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices, const std::vector<Texture>& textures);
+	Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices, const Shader& shader);
+	Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices, const std::vector<Texture>& textures, const Shader& shader);
 
 	~Mesh();
 
 	/*Draw method*/
-	void Draw(const Shader& shader, bool isElement) const;
+	void Draw(const Shader& shader, const Camera& camera, bool isLightSource = false) const;
 
 	/*Setters and Getters*/
+
+private:
 	void setUp(const Shader& shader);
 
 private:
@@ -39,6 +41,5 @@ private:
 	/*Also is the mesh ID*/
 	VAO m_VAO;
 
-	/*To check if the mesh has been set up*/
-	bool m_IsSetUp; 
+	
 };

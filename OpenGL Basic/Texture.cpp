@@ -26,7 +26,7 @@ Texture::Texture(const std::string& path, const std::string& type)
 
 
 		//decide format of the data depend on number of channels
-		GLenum format;
+		GLenum format = 0;
 		switch (m_NumColorChannels)
 		{
 		case 1:
