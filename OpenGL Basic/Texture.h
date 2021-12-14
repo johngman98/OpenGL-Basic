@@ -7,7 +7,7 @@ class Texture
 public:
 	/*Constructors and Deconstuctors*/
 
-	Texture(const std::string& path, const std::string& type);
+	Texture(const std::string& path, const std::string& type, GLuint slot = 0);
 	~Texture();
 
 	/*(un)bind methods*/

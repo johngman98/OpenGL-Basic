@@ -17,11 +17,13 @@ class Camera
 {
 public:
 	/*Constuctors and deconstructors*/ 
-	Camera(glm::vec3 position, float speed, float sensitivity);
+	Camera(glm::vec3 position, float speed, float sensitivity, int windowWidth, int windowHeight);
 	~Camera();
 
 	/*Setters and Getters*/
 	glm::vec3 getPosition() const;
+	int getWindowWidth() const;
+	int getWindowHeight() const;
 
 	/*Camera matrices*/
 	//call method outside of the game loop if the matrix doesnt need to be updated every frame
@@ -54,4 +56,8 @@ private:
 	bool m_isFirstMouse = true;
 	float m_lastMouseX = 0.0f;
 	float m_lastMouseY = 0.0f;
+
+	/*Window height and width*/
+	int m_windowWidth;
+	int m_windowHeight;
 };

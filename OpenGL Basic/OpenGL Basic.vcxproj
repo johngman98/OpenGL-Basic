@@ -72,22 +72,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\stb;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\glm;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\stb;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\glm;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\json;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\lib\Release\x64;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\lib-vc2019;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\stb;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\glm;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\stb;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\glm;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\json;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\lib\Release\x64;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\lib-vc2019;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\stb;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\glm;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\stb;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\glm;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\json;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\lib\Release\x64;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\lib-vc2019;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\stb;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\glm;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\stb;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\glm;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\include;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\json;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLEW\lib\Release\x64;C:\Users\admin\source\repos\OpenGL Basic\Dependencies\GLFW\lib-vc2019;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -155,9 +155,11 @@
     <ClCompile Include="EBO.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="Utility.cpp" />
     <ClCompile Include="VAO.cpp" />
     <ClCompile Include="VBO.cpp" />
   </ItemGroup>
@@ -165,8 +167,10 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="EBO.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="Utility.h" />
     <ClInclude Include="VAO.h" />
     <ClInclude Include="VBO.h" />
   </ItemGroup>

@@ -3,8 +3,8 @@
 #include <iostream>
 
 
-Texture::Texture(const std::string& path, const std::string& type)
-	:m_Unit(0), m_Type(type), m_ID(0) //default unit 0
+Texture::Texture(const std::string& path, const std::string& type, GLuint slot)
+	:m_Unit(slot), m_Type(type), m_ID(0) //default unit 0
 {
 	//read the image file and store it
 	stbi_set_flip_vertically_on_load(true);
@@ -12,8 +12,9 @@ Texture::Texture(const std::string& path, const std::string& type)
 	
 	if (bytes != nullptr) 
 	{
-		//create opengl texture object without assigning it to a texture unit
+		//create opengl texture object and assign it to a texture unit
 		glGenTextures(1, &m_ID);
+		glActiveTexture(GL_TEXTURE0 + m_Unit);
 		glBindTexture(GL_TEXTURE_2D, m_ID);
 
 		//set parameters 
@@ -42,6 +43,7 @@ Texture::Texture(const std::string& path, const std::string& type)
 			break;
 
 		default:
+			throw std::invalid_argument("Texture format is not supported!!");
 			break;
 		}
 
@@ -75,7 +77,7 @@ void Texture::setUnit(const Shader& shader, const std::string& uniformName, GLui
 	m_Unit = unit;
 	shader.bindProgram();
 	shader.setUniform1i(uniformName, m_Unit);
-	shader.unbindProgram();//just for sure
+	//shader.unbindProgram();//just for sure
 }
 
 std::string Texture::getType() const

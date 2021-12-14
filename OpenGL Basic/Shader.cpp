@@ -79,31 +79,7 @@ void Shader::setUniform3f(const std::string& uniformName, glm::vec3 vector) cons
 	glUniform3f(getUniformLocation(uniformName), vector.x, vector.y, vector.z);
 }
 
-std::string Shader::getFileContent(const std::string& filePath)
-{
-	const std::string ERR_MSG = "Failed to read file: " + filePath;
-	std::string fileContent = "";
-	std::string line = "";
-	std::fstream fileStream(filePath);
-	
-	//check state of the stream, only return true if none of the error flags is set (eofbit, failbit, badbit)
-	if(!fileStream.good())
-	{
-		/*TODO: output useful error logs*/
-		std::cout << ERR_MSG << std::endl;
-		return ERR_MSG;
-	}
-
-	//extract content
-	while (!fileStream.eof())//endoffile
-	{
-		std::getline(fileStream, line);
-		fileContent += line + "\n";
-	}
-	return fileContent;
-}
-
-void Shader::compileErrors(GLuint ID, const std::string& type)
+void Shader::compileErrors(GLuint ID, const std::string& type) const
 {
 	GLint hasCompiled;
 	char infoLog[1024];
@@ -131,9 +107,9 @@ GLint Shader::getUniformLocation(const std::string& uniformName) const
 {
 
 	GLint location = glGetUniformLocation(m_ProgramID, uniformName.c_str());
-	if (location == -1)
+	//if (location == -1)
 		//uniform that is unused by the complier with be discard, hence location = -1
-		std::cout << "Uniform varibale with name: " << uniformName << " does not exist or use"<< std::endl;
+		//std::cout << "Uniform varibale with name: " << uniformName << " does not exist or use"<< std::endl;
 	return location;
 }
 
