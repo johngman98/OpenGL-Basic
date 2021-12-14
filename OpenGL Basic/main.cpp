@@ -231,17 +231,16 @@ int main(void)
 	//vector can create copies and detroy them right after
 	std::vector<Texture> textures;
 	textures.reserve(2);
-	textures.emplace_back("planks.png", "diffuse");
-	textures.emplace_back("planksSpec.png", "specular");
+	textures.emplace_back("planks.png", "diffuse", 0);
+	textures.emplace_back("planksSpec.png", "specular", 1);
 	//assign texture units do once per shader
-	
 
 	
 	//Mesh
-	Mesh mesh1(vertices, indices, textures, shader);
+	Mesh mesh1(vertices, indices, textures);
 
 	//Camera
-	Camera camera(glm::vec3(0.0f, 1.0f, 2.0f), 5.0f, 0.1f);
+	Camera camera(glm::vec3(0.0f, 1.0f, 2.0f), 5.0f, 0.1f, WIDTH, HEIGHT);
 	
 	//update matrix
 	glm::mat4 model = glm::mat4(1.0f);
@@ -256,27 +255,20 @@ int main(void)
 	shader.unbindProgram();
 
 
-	//Light source object
-	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPosition = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
+
 
 	Shader lightShader("LightVert.Shader", "LightFrag.Shader");
 	
 	//light mesh
-	Mesh lightMesh(lightVertices, lightIndices, lightShader);
+	Mesh lightMesh(lightVertices, lightIndices);
 
-	glm::mat4 lightModel = glm::translate(glm::mat4(1.0f), lightPosition);
-	glm::mat4 lightView = view; 
-	glm::mat4 lightProj = proj;
 
-	lightShader.bindProgram();
-	lightShader.setUniformMatrix4fv("lightModel", lightModel);
-	lightShader.setUniformMatrix4fv("view", lightView);
-	lightShader.setUniformMatrix4fv("lightProj", lightProj);
-	lightShader.unbindProgram();
 
-	//send uniforms
+	//Light source object
+	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	glm::vec3 lightPosition = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
+	//send uniforms relate to light calculation
 	shader.bindProgram();
 	shader.setUniform4f("lightColor", lightColor);
 	shader.setUniform3f("lightPosition", lightPosition);
@@ -320,10 +312,8 @@ int main(void)
 		mesh1.Draw(shader, camera);
 	
 		//Draw light source
-		lightMesh.Draw(lightShader, camera, true);
+		lightMesh.Draw(lightShader, camera);
 	
-		
-
 		//Swap front and back buffers
 		glfwSwapBuffers(window);
 

@@ -7,7 +7,7 @@ struct Vertex
 {
 	glm::vec3 position;
 	glm::vec3 normal;
-	glm::vec2 textureUV;
+	glm::vec2 textureCoordinate;
 };
 class VBO
 {

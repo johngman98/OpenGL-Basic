@@ -1,10 +1,11 @@
 #include "Camera.h"
 
 
-Camera::Camera(glm::vec3 position, float speed, float sensitivity)
+Camera::Camera(glm::vec3 position, float speed, float sensitivity, int windowWidth, int windowHeight)
 	:m_Position(position), m_Direction(DEFAULT_CAM_DIR), m_Up(DEFAULT_CAM_UP),
 	 m_Speed(speed), m_Sensitivity(sensitivity),
-	 m_Pitch(DEFAULT_CAM_PITCH), m_Yaw(DEFAULT_CAM_YAW)
+	 m_Pitch(DEFAULT_CAM_PITCH), m_Yaw(DEFAULT_CAM_YAW),
+	 m_windowWidth(windowWidth), m_windowHeight(windowHeight)
 {
 }
 
@@ -15,6 +16,16 @@ Camera::~Camera()
 glm::vec3 Camera::getPosition() const
 {
 	return m_Position;
+}
+
+int Camera::getWindowWidth() const
+{
+	return m_windowWidth;
+}
+
+int Camera::getWindowHeight() const
+{
+	return m_windowHeight;
 }
  
 glm::mat4 Camera::calculateViewMatrix()const

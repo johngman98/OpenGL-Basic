@@ -8,6 +8,7 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 
+#include "Utility.h"
 
 //TODO: make a list of checked uniform variables so dont have to call glGetUniformLocation
 class Shader
@@ -31,9 +32,8 @@ public:
 	void setUniform3f(const std::string& uniformName, glm::vec3 vector) const;
 
 private:
-	std::string getFileContent(const std::string& filePath);
 	//get compile errors of program or shaders
-	void compileErrors(GLuint ID, const std::string& type);
+	void compileErrors(GLuint ID, const std::string& type) const;
 	GLint getUniformLocation(const std::string& uniformName) const;
 
 
