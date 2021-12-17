@@ -12,7 +12,7 @@ public:
 	Model(const std::string& filePath);
 	~Model();
 
-	void draw(const Shader& shader, const Camera& camera) const;
+	void draw(const Shader& shader, const Camera& camera);
 
 private:
 	std::vector<unsigned char> getData() const;
@@ -43,9 +43,9 @@ private:
 	std::vector<Mesh> m_Meshes;
 
 	//tranformation matrices
-	std::vector<glm::vec3> translationMeshes;
-	std::vector<glm::quat> rotationsMeshes;
-	std::vector<glm::vec3> scalesMeshes;
-	std::vector<glm::mat4> matricesMeshes;
+	std::vector<glm::vec3> m_TranslationMeshes;
+	std::vector<glm::quat> m_RotationsMeshes;
+	std::vector<glm::vec3> m_ScalesMeshes;
+	std::vector<glm::mat4> m_MatricesMeshes;
 
 };

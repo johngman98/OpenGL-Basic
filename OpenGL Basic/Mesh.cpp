@@ -19,12 +19,12 @@ Mesh::~Mesh()
 {
 }
 
-void Mesh::Draw(const Shader& shader, 
+void Mesh::draw(const Shader& shader, 
 				const Camera& camera, 
 				glm::mat4 modelMatrix, 
 				glm::vec3 translation, 
 				glm::quat rotation, 
-				glm::vec3 scale)
+				glm::vec3 scale) 
 {
 	/*Bind program*/
 	shader.bindProgram();
@@ -72,7 +72,7 @@ void Mesh::Draw(const Shader& shader,
 	//send to shader
 	shader.setUniformMatrix4fv("model", modelMatrix);
 	shader.setUniformMatrix4fv("translation", trans);
-	shader.setUniformMatrix4fv("rotaion", rot);
+	shader.setUniformMatrix4fv("rotation", rot);
 	shader.setUniformMatrix4fv("scale", sca);
 
 	/*Draw*/

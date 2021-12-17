@@ -8,24 +8,29 @@ Model::Model(const std::string& filePath)
 	m_FilePath = filePath;
 	m_Data = getData();
 
+	traverseNode(0);
 }
 
 Model::~Model()
 {
 }
 
-void Model::draw(const Shader& shader, const Camera& camera) const
+void Model::draw(const Shader& shader, const Camera& camera) 
 {
+	for (unsigned int i = 0; i < m_Meshes.size(); i++)
+	{
+		m_Meshes[i].draw(shader, camera, m_MatricesMeshes[i]);
+	}
 }
-
 std::vector<unsigned char> Model::getData() const
 {
 	std::string bytesText;
 	std::string	uri = m_JSON["buffers"][0]["uri"];
 	std::string fileDirectory = m_FilePath.substr(0, m_FilePath.find_last_of('/') + 1);
-	bytesText = getFileContent((fileDirectory + uri).c_str());
+	bytesText = get_file_contents((fileDirectory + uri).c_str());
 
-	return std::vector<unsigned char>(bytesText.begin(), bytesText.end());
+	std::vector<unsigned char> data(bytesText.begin(), bytesText.end());
+	return data;
 
 }
 
@@ -41,7 +46,7 @@ std::vector<float> Model::getFloats(const json& accessor) const
 	json bufferView = m_JSON["bufferViews"][bufferViewIndex];
 	unsigned int byteOffset = bufferView["byteOffset"];
 
-	unsigned int numFloatsPerVert = 0;
+	unsigned int numFloatsPerVert;
 	if (type == "SCALAR") numFloatsPerVert = 1;
 	else if (type == "VEC2") numFloatsPerVert = 2;
 	else if (type == "VEC3") numFloatsPerVert = 3;
@@ -211,4 +216,88 @@ void Model::loadMesh(unsigned int meshIndex)
 	
 	m_Meshes.push_back(Mesh(vertices, indices, textures));
 }
+
+void Model::traverseNode(unsigned int nextNode, glm::mat4 matrix)
+{
+	json node = m_JSON["nodes"][nextNode];
+
+	glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
+	if (node.find("translation") != node.end())
+	{
+		float transValues[3] = { 0.0f };
+		for (unsigned int i = 0; i < node["translation"].size(); i++)
+		{
+			transValues[i] = (node["translation"][i]);
+		}
+		translation = glm::make_vec3(transValues);
+	}
+
+	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+	if (node.find("rotation") != node.end())
+	{
+		float rotValues[4] =
+		{
+			node["rotation"][3],
+			node["rotation"][0],
+			node["rotation"][1],
+			node["rotation"][2],
+		};
+		rotation = glm::make_quat(rotValues);
+	}
+
+	glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
+	if (node.find("scale") != node.end())
+	{
+		float scaleValues[3] = { 0.0f };
+		for (unsigned int i = 0; i < node["scale"].size(); i++)
+		{
+			scaleValues[i] = (node["scale"][i]);
+		}
+		scale = glm::make_vec3(scaleValues);
+
+	}
+
+	glm::mat4 matNode = glm::mat4(1.0f);
+	if (node.find("matrix") != node.end())
+	{
+		float matValues[16] = { 0.0f };
+		for (unsigned int i = 0; i < node["matrix"].size(); i++)
+		{
+			matValues[i] = (node["matrix"][i]);
+		}
+		matNode = glm::make_mat4(matValues);
+	}
+
+	glm::mat4 trans = glm::mat4(1.0f);
+	glm::mat4 rot = glm::mat4(1.0f);
+	glm::mat4 sca = glm::mat4(1.0f);
+
+	trans = glm::translate(trans, translation);
+	rot = glm::mat4_cast(rotation);
+	sca = glm::scale(sca, scale);
+
+	glm::mat4 matNextNode = matrix * matNode * trans * rot * sca;
+
+	if (node.find("mesh") != node.end())
+	{
+		m_TranslationMeshes.push_back(translation);
+		m_RotationsMeshes.push_back(rotation);
+		m_ScalesMeshes.push_back(scale);
+		m_MatricesMeshes.push_back(matNextNode);
+
+		loadMesh(node["mesh"]);
+	}
+
+	if (node.find("children") != node.end())
+	{
+		for (unsigned int i = 0; i < node["children"].size(); i++)
+		{
+			traverseNode(node["children"][i], matNextNode);
+		}
+	}
+}
+
+
+
+
 

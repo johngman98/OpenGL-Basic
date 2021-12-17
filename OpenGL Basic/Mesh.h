@@ -3,6 +3,7 @@
 #include<GLFW/glfw3.h>
 #include<glm/glm.hpp>
 #include<glm/gtc/quaternion.hpp>
+#include<glm/gtc/type_ptr.hpp>
 #include<iostream>
 #include<vector>
 #include"Texture.h" 
@@ -26,7 +27,7 @@ public:
 	~Mesh();
 
 	/*Draw method*/
-	void Draw(const Shader& shader,
+	void draw(const Shader& shader,
 			  const Camera& camera,
 			  glm::mat4 modelMatrix = glm::mat4(1.0f),
 			  glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f),

@@ -22,6 +22,7 @@
 #include "Texture.h"
 #include "Camera.h"
 #include "Mesh.h"
+#include "Model.h"
 
 
 const int WIDTH = 800;
@@ -236,26 +237,15 @@ int main(void)
 	//assign texture units do once per shader
 
 	
+	Model sword("models/scroll/scene.gltf");
+
 	//Mesh
 	Mesh mesh1(vertices, indices, textures);
 
 	//Camera
-	Camera camera(glm::vec3(0.0f, 1.0f, 2.0f), 5.0f, 0.1f, WIDTH, HEIGHT);
+	Camera camera(glm::vec3(0.0f, 5.0f, 5.0f), 5.0f, 0.1f, WIDTH, HEIGHT);
 	
 	//update matrix
-	glm::mat4 model = glm::mat4(1.0f);
-	glm::mat4 view = camera.calculateViewMatrix();
-	glm::mat4 proj = camera.calculateProjectionMatrix(45.0f, float(WIDTH) / float(HEIGHT), 0.1f, 100.0f);
-	
-
-	shader.bindProgram();
-	shader.setUniformMatrix4fv("model", model);
-	shader.setUniformMatrix4fv("view", view);
-	shader.setUniformMatrix4fv("proj", proj);
-	shader.unbindProgram();
-
-
-
 
 	Shader lightShader("LightVert.Shader", "LightFrag.Shader");
 	
@@ -309,10 +299,12 @@ int main(void)
 		camera.processInputs(window, WIDTH, HEIGHT, deltaTime);
 		
 		//Draw an object
-		mesh1.Draw(shader, camera);
+		//mesh1.draw(shader, camera);
+		
+		sword.draw(shader, camera);
 	
 		//Draw light source
-		lightMesh.Draw(lightShader, camera);
+		lightMesh.draw(lightShader, camera);
 	
 		//Swap front and back buffers
 		glfwSwapBuffers(window);
