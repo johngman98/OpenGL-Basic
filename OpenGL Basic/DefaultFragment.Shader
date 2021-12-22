@@ -43,7 +43,7 @@ vec4 genPointLight()
 
 	return (texture(diffuse0, texCoord) * (ambient + diffuse * attenuation) + (texture(specular0, texCoord).r) * specular * attenuation) * lightColor;
 }
-vec4 genDirectionalLight(vec3 lightDir)
+vec4 genDirectionalLight(vec3 lightDir = vec3(1.0f, 1.0f, 0.0f))
 {
 	/*lightDir points from light to object and is normalized*/
 	//ambient light
@@ -88,7 +88,45 @@ vec4 genSpotLight(float cutOff)
 	return (texture(diffuse0, texCoord) * (ambient + diffuse * intensity) + (texture(specular0, texCoord).r) * specular * intensity) * lightColor;
 }
 
+//should be the same as near and far planes
+float near = 0.1f;
+float far = 100.0f;
+
+float linearizeDepth(float depth)
+{
+	/*
+	Depth value is non linear: 
+		F_depth = (1 / z - 1 / near) / (1 / far - 1 / near)
+	*/
+
+	/*Linearize depth value to visualize*/
+	//transform z-value [0, 1] back to NDC(normalized device coord) [-1, 1]
+	float ndc = depth * 2.0 - 1.0;
+	//apply inverse transformation to retreve linear depth value
+	float linearDepth = (2.0 * near * far) / (far + near - ndc * (far - near));
+	return linearDepth;
+
+}
+
+float logisticDepth(float depth, float steepness = 0.5f, float offset = 5.0f)
+{
+	float zVal = linearizeDepth(depth);
+	return (1 / (1 + exp(-steepness * (zVal - offset))));
+}
+
 void main()
 {
-	fragColor = genPointLight();
+	//Output Light
+	//fragColor = genPointLight();
+
+	//Visualize depth testing
+	//screen space coords (viewport) can be accessed thru gl_FragCoord
+	//x, y is screen space coords starts at bottom left, 
+	//z value used to compare to depth buffer's content and goes from [0, 1]
+	//float depth = linearizeDepth(gl_FragCoord.z) / far;//depth value [near, far] (view space) => normalize by dividing by far
+	//fragColor = vec4(vec3(depth) / far), 1.0f);
+
+	//Fog effect
+	float depth = logisticDepth(gl_FragCoord.z);
+	fragColor = genDirectionalLight() * (1.0f - depth) + vec4(depth * vec3(0.85f, 0.85f, 0.90f), 1.0f);
 }
