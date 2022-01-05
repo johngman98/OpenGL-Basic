@@ -117,7 +117,7 @@ float logisticDepth(float depth, float steepness = 0.5f, float offset = 5.0f)
 void main()
 {
 	//Output Light
-	//fragColor = genPointLight();
+	fragColor = genPointLight();
 
 	//Visualize depth testing
 	//screen space coords (viewport) can be accessed thru gl_FragCoord
@@ -127,6 +127,6 @@ void main()
 	//fragColor = vec4(vec3(depth) / far), 1.0f);
 
 	//Fog effect
-	float depth = logisticDepth(gl_FragCoord.z);
-	fragColor = genDirectionalLight() * (1.0f - depth) + vec4(depth * vec3(0.85f, 0.85f, 0.90f), 1.0f);
+	//float depth = logisticDepth(gl_FragCoord.z);
+	//fragColor = genDirectionalLight() * (1.0f - depth) + vec4(depth * vec3(0.85f, 0.85f, 0.90f), 1.0f);
 }

@@ -79,6 +79,11 @@ void Shader::setUniform3f(const std::string& uniformName, glm::vec3 vector) cons
 	glUniform3f(getUniformLocation(uniformName), vector.x, vector.y, vector.z);
 }
 
+void Shader::setUniform1f(const std::string& uniformName, float value) const
+{
+	glUniform1f(getUniformLocation(uniformName), value);
+}
+
 void Shader::compileErrors(GLuint ID, const std::string& type) const
 {
 	GLint hasCompiled;

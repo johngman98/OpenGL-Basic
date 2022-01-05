@@ -125,6 +125,15 @@ int main(void)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
+	//Stencil test
+	glEnable(GL_STENCIL_TEST);
+
+	//how the fragments are drawn or discarded base on content of stencil buffer
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	//both depth test and stencil test pass use the ref value
+	//decide how stencil buffer is updated
+	glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
+
 	//viewport: part where objects will be renders
 	glViewport(0, 0, WIDTH, HEIGHT);
 
@@ -133,6 +142,7 @@ int main(void)
 
 	//shader objects
 	Shader shader("DefaultVertex.Shader", "DefaultFragment.Shader");
+	Shader outLiningShader("OutLiningVert.Shader", "OutliningFrag.Shader");
 	
 	//texture objects 
 	//vector can create copies and detroy them right after
@@ -140,10 +150,10 @@ int main(void)
 	textures.reserve(2);
 	textures.emplace_back("planks.png", "diffuse", 0);
 	textures.emplace_back("planksSpec.png", "specular", 1);
-	//assign texture units do once per shader
-
 	
-	Model model1("models/map/scene.gltf");
+	Model model1("models/crow/scene.gltf");
+	//this model hasnt fixed texture path, not really needed
+	Model model2("models/crow-outline/scene.gltf"); 
 
 	//Mesh
 	Mesh mesh1(vertices, indices, textures);
@@ -189,11 +199,11 @@ int main(void)
 	//Main loop
 	while(!glfwWindowShouldClose(window))
 	{	//Set (the state) background colour
-		glClearColor(0.85f, 0.85f, 0.90f, 1.0f);
+		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 
 		//Clear the back buffer and assign the new color to it
 		//Clear the depth buffer
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		
 		//Simple timer
 		float currentTime = glfwGetTime();
@@ -203,13 +213,37 @@ int main(void)
 		//Camera
 		camera.processInputs(window, WIDTH, HEIGHT, deltaTime);
 		
-		//Draw an object
-		mesh1.draw(shader, camera);
-		
+
+		//Draw a mesh
+		glStencilMask(0x00);
+		mesh1.draw(shader, camera, glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
+
+		//Draw a model
+		//Stencil test always passed
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);
 		model1.draw(shader, camera);
-	
+		
+		//make it so only fragments with values diff than 1 pass the test
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		//disable writing to the stencil buffer to keep the prev silhouette as referrence
+		//glStencilMask's mask before write to buffer, mask of glStencilFunc is used during testing
+		glStencilMask(0x00);
+		//Disable depth testing to make sure the next object is in front of the prev
+		glDisable(GL_DEPTH_TEST);
+		//outLiningShader.bindProgram();
+		//outLiningShader.setUniform1f("outlining", 0.08f);
+		model2.draw(outLiningShader, camera);
+
+		glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 0, 0xFF);
+		glEnable(GL_DEPTH_TEST);
+
+
+
 		//Draw light source
-		lightMesh.draw(lightShader, camera);
+		//lightMesh.draw(lightShader, camera);
 	
 		//Swap front and back buffers
 		glfwSwapBuffers(window);

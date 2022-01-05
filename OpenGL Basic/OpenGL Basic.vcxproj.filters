@@ -111,5 +111,11 @@
     <None Include="LightVert.Shader">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="OutLiningVert.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="OutliningFrag.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -30,6 +30,7 @@ public:
 	void setUniformMatrix4fv(const std::string& uniformName, const glm::mat4& matrix) const;
 	void setUniform4f(const std::string& uniformName, glm::vec4 vector) const;
 	void setUniform3f(const std::string& uniformName, glm::vec3 vector) const;
+	void setUniform1f(const std::string& uniformName, float value) const;
 
 private:
 	//get compile errors of program or shaders
