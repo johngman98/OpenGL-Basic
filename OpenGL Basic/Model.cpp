@@ -26,6 +26,13 @@ void Model::draw(const Shader& shader, const Camera& camera)
 		m_Meshes[i].draw(shader, camera, m_MatricesMeshes[i]);
 	}
 }
+void Model::draw(const Shader& shader, const Camera& camera, glm::vec3 translation)
+{
+	for (unsigned int i = 0; i < m_Meshes.size(); i++)
+	{
+		m_Meshes[i].Mesh::draw(shader, camera, m_MatricesMeshes[i], translation);
+	}
+}
 std::vector<unsigned char> Model::getData() const
 {
 	/*Create a place to store raw textand get the uri(path) of the binary file*/
@@ -157,7 +164,7 @@ std::vector<Texture> Model::getTexture()
 		if (!skip) 
 		{
 			//diffuse texture
-			if (texturePath.find("baseColor") != std::string::npos)
+			if (texturePath.find("baseColor") != std::string::npos || texturePath.find("diffuse") != std::string::npos)
 			{
 				Texture diffuse = Texture(fileDir + texturePath, "diffuse");
 				textures.push_back(diffuse);
@@ -165,7 +172,7 @@ std::vector<Texture> Model::getTexture()
 				m_LoadedTextureNames.push_back(texturePath);
 			}
 			//specular texture
-			else if (texturePath.find("metallicRoughness") != std::string::npos)
+			else if (texturePath.find("metallicRoughness") != std::string::npos || texturePath.find("specular") != std::string::npos)
 			{
 				Texture specular = Texture(fileDir + texturePath, "specular");
 				textures.push_back(specular);

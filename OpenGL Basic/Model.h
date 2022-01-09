@@ -13,6 +13,8 @@ public:
 	~Model();
 
 	void draw(const Shader& shader, const Camera& camera);
+	void draw(const Shader& shader, const Camera& camera,
+			  glm::vec3 translation);
 
 private:
 	std::vector<unsigned char> getData() const;

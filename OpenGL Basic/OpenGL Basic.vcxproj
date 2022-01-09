@@ -183,10 +183,12 @@
   <ItemGroup>
     <None Include="DefaultFragment.Shader" />
     <None Include="DefaultVertex.Shader" />
+    <None Include="GrassFrag.Shader" />
     <None Include="LightFrag.Shader" />
     <None Include="LightVert.Shader" />
     <None Include="OutliningFrag.Shader" />
     <None Include="OutLiningVert.Shader" />
+    <None Include="WindowsFrag.Shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

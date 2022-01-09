@@ -117,5 +117,11 @@
     <None Include="OutliningFrag.Shader">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="GrassFrag.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="WindowsFrag.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

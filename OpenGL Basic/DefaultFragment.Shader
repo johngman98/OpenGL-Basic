@@ -43,7 +43,7 @@ vec4 genPointLight()
 
 	return (texture(diffuse0, texCoord) * (ambient + diffuse * attenuation) + (texture(specular0, texCoord).r) * specular * attenuation) * lightColor;
 }
-vec4 genDirectionalLight(vec3 lightDir = vec3(1.0f, 1.0f, 0.0f))
+vec4 genDirectionalLight()
 {
 	/*lightDir points from light to object and is normalized*/
 	//ambient light
@@ -51,7 +51,7 @@ vec4 genDirectionalLight(vec3 lightDir = vec3(1.0f, 1.0f, 0.0f))
 
 	//diffuse light
 	vec3 normal = normalize(Normal);
-	vec3 lightDirection = normalize(-lightDir);//vector dir from object's pos -> light's pos
+	vec3 lightDirection = normalize(vec3(1.0f, 1.0f, 0.0f));//vector dir from object's pos -> light's pos
 	float diffuse = max(dot(normal, lightDirection), 0.0f);//make sure its positive
 
 	//specular light
@@ -61,7 +61,7 @@ vec4 genDirectionalLight(vec3 lightDir = vec3(1.0f, 1.0f, 0.0f))
 	float specAmount = pow(max(dot(viewDirection, reflectDirection), 0.0f), 16);
 	float specular = specAmount * specularStrength;
 
-	return (texture(diffuse0, texCoord) * (ambient + diffuse ) + (texture(specular0, texCoord).r) * specular ) * lightColor;
+	return (texture(diffuse0, texCoord) * (ambient + diffuse) + (texture(specular0, texCoord).r) * specular ) * lightColor;
 }
 vec4 genSpotLight(float cutOff)
 {	
@@ -117,7 +117,7 @@ float logisticDepth(float depth, float steepness = 0.5f, float offset = 5.0f)
 void main()
 {
 	//Output Light
-	fragColor = genPointLight();
+	fragColor = genDirectionalLight();
 
 	//Visualize depth testing
 	//screen space coords (viewport) can be accessed thru gl_FragCoord
