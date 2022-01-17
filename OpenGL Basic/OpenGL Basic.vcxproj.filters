@@ -123,5 +123,11 @@
     <None Include="WindowsFrag.Shader">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="FramebufferFrag.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="FramebufferVert.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

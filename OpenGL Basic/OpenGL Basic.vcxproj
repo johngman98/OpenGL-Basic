@@ -183,6 +183,8 @@
   <ItemGroup>
     <None Include="DefaultFragment.Shader" />
     <None Include="DefaultVertex.Shader" />
+    <None Include="FramebufferFrag.Shader" />
+    <None Include="FramebufferVert.Shader" />
     <None Include="GrassFrag.Shader" />
     <None Include="LightFrag.Shader" />
     <None Include="LightVert.Shader" />

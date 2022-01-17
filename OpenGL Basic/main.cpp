@@ -31,6 +31,17 @@
 const int WIDTH = 800;
 const int HEIGHT = 800;
 
+float rectangleVertices[] =
+{
+	// Coords    // texCoords
+	 1.0f, -1.0f,  1.0f, 0.0f,
+	-1.0f, -1.0f,  0.0f, 0.0f,
+	-1.0f,  1.0f,  0.0f, 1.0f,
+
+	 1.0f,  1.0f,  1.0f, 1.0f,
+	 1.0f, -1.0f,  1.0f, 0.0f,
+	-1.0f,  1.0f,  0.0f, 1.0f
+};
 
 
 int main(void)
@@ -117,9 +128,15 @@ int main(void)
 	//Depth test
 	//depth value is 0.0f at near plane and 1.0f at far plane
 	glEnable(GL_DEPTH_TEST);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	//viewport: part where objects will be renders
+	// Enables Cull Facing
+	glEnable(GL_CULL_FACE);
+	// Keeps front faces
+	glCullFace(GL_FRONT);
+	// Uses counter clock-wise standard
+	glFrontFace(GL_CCW);
+
+	//viewport: part where objects will be rendered
 	glViewport(0, 0, WIDTH, HEIGHT);
 
 	//wireframe
@@ -127,9 +144,8 @@ int main(void)
 
 	//shader objects
 	Shader shader("DefaultVertex.Shader", "DefaultFragment.Shader");
-	Shader outLiningShader("OutLiningVert.Shader", "OutliningFrag.Shader");
-	Shader grassShader("DefaultVertex.Shader", "GrassFrag.Shader");
-	Shader windowsShader("DefaultVertex.Shader", "WindowsFrag.Shader");
+	Shader lightShader("LightVert.Shader", "LightFrag.Shader");
+	Shader framebufferShader("FramebufferVert.Shader", "FramebufferFrag.Shader");
 	
 	//texture objects 
 	//vector can create copies and detroy them right after
@@ -138,9 +154,8 @@ int main(void)
 	textures.emplace_back("planks.png", "diffuse", 0);
 	textures.emplace_back("planksSpec.png", "specular", 1);
 	
-	Model ground("models/ground/scene.gltf");
-	Model windows("models/windows/scene.gltf");
-	Model grass("models/grass/scene.gltf");
+	Model model1("models/crow/scene.gltf");
+
 
 
 	//Mesh
@@ -148,9 +163,8 @@ int main(void)
 
 	//Camera
 	Camera camera(glm::vec3(0.0f, 5.0f, 5.0f), 5.0f, 0.1f, WIDTH, HEIGHT);
+
 	
-	//Shaders
-	Shader lightShader("LightVert.Shader", "LightFrag.Shader");
 
 	//light mesh
 	Mesh lightMesh(lightVertices, lightIndices);
@@ -172,11 +186,6 @@ int main(void)
 	lightShader.setUniform4f("lightColor", lightColor);
 	lightShader.unbindProgram();
 
-	grassShader.bindProgram();
-	grassShader.setUniform4f("lightColor", lightColor);
-	grassShader.setUniform3f("lightPosition", lightPosition);
-	grassShader.setUniform3f("cameraPosition", camera.getPosition());
-	grassShader.unbindProgram();
 
 	
 
@@ -198,6 +207,64 @@ int main(void)
 		glm::vec3(0.5f, 0.0f, -0.6f)
 	};
 
+
+	/*Frame buffer
+		Why use framebuffer?
+		-To apply a global effect on the whole scene, we face a limitation: all the shaders work locally, 
+		vertex shaders only know about the current vertex, and fragment shaders only know about the current pixel.
+
+		-The only exception is when working with textures: 
+		in this case, we can access any part of the texture using texture coordinates.
+
+		-So the idea for post-processing is to first render the whole scene in a texture, 
+		and then render this single texture to screen with the post-processing.
+	*/
+
+	//Prepare framebuffer rectangle VBOand VAO
+	unsigned int rectVAO, rectVBO;
+	glGenVertexArrays(1, &rectVAO);
+	glGenBuffers(1, &rectVBO);
+	glBindVertexArray(rectVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVertices), &rectangleVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+
+
+	//Create framebufferobject and texture for framebuffer
+	unsigned int FBO;
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+	unsigned int framebufferTexture;
+	glGenTextures(1, &framebufferTexture);
+	glBindTexture(GL_TEXTURE_2D, framebufferTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);//clamp so the one side texture wont bleed to the other side
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebufferTexture, 0);
+
+	//renderbuffer object: faster than texture object but cant be accessed (directly) in shader
+	unsigned int RBO;
+	glGenRenderbuffers(1, &RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WIDTH, HEIGHT);
+	//attach to framebuffer
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+	//check errors
+	auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Framebuffer error: " << fboStatus << std::endl;
+
+	//set unit to texture
+	framebufferShader.setUniform1i("screenTexture", 0);
+
 	//Main loop
 	while(!glfwWindowShouldClose(window))
 	{	
@@ -218,13 +285,17 @@ int main(void)
 		}
 		deltaTime = currentTime - prevTime2;
 		prevTime2 = currentTime;
+
+		//Bind the frame buffer 1st, draw everything to framebuffer (actually to the renderbuffer)
+		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+		
 		//Set (the state) background colour
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
 
 		//Clear the back buffer and assign the new color to it
 		//Clear the depth buffer
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
 
 		//Camera
 		camera.processInputs(window, WIDTH, HEIGHT, deltaTime);
@@ -232,42 +303,16 @@ int main(void)
 		//mesh1.draw(shader, camera);
 
 		//Draw model
-		ground.draw(shader, camera);
-		grass.draw(grassShader, camera);
-		
-		//sort according to distance from cam to the windows
-		/*std::sort(windowsPos.begin(), windowsPos.end(), [&](glm::vec3 v1, glm::vec3 v2)
-			{
-				float d1 = glm::length(camera.getPosition() - v1);
-				float d2 = glm::length(camera.getPosition() - v2);
-				return d1 > d2;
-			});
-		glEnable(GL_BLEND);
-		for(auto& pos: windowsPos)
-		{
-			//render the furthest first
-			windows.draw(windowsShader, camera, pos);
-		}
-		glDisable(GL_BLEND);
+		model1.draw(shader, camera);
 
-		
-		*/
-		//using map 
-		std::map<float, glm::vec3> posSorted;
-		for (auto& pos : windowsPos)
-		{
-			float distance = glm::length(camera.getPosition() - pos);
-			posSorted[distance] = pos;
-		}
-
-
-		glEnable(GL_BLEND);
-		for(auto it = posSorted.rbegin(); it != posSorted.rend(); it++)
-		{
-			//render the furthest first
-			windows.draw(windowsShader, camera, it->second);
-		}
-		glDisable(GL_BLEND);
+		//Switch back to default framebuffer to draw the quad (contains everything we drew to the framebuffer)
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		framebufferShader.bindProgram();
+		glBindVertexArray(rectVAO);
+		//disable depth test to make sure the quad is in front
+		glDisable(GL_DEPTH_TEST);
+		glBindTexture(GL_TEXTURE_2D, framebufferTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		//Swap front and back buffers
 		glfwSwapBuffers(window);
