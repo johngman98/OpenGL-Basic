@@ -26,21 +26,45 @@
 #include "Mesh.h"
 #include "Model.h"
 #include "Utility"
+#include <stb_image.h>
 
 
 const int WIDTH = 800;
 const int HEIGHT = 800;
 
-float rectangleVertices[] =
+float skyboxVertices[] =
 {
-	// Coords    // texCoords
-	 1.0f, -1.0f,  1.0f, 0.0f,
-	-1.0f, -1.0f,  0.0f, 0.0f,
-	-1.0f,  1.0f,  0.0f, 1.0f,
+	//   Coordinates
+	-1.0f, -1.0f,  1.0f,//        7--------6
+	 1.0f, -1.0f,  1.0f,//       /|       /|
+	 1.0f, -1.0f, -1.0f,//      4--------5 |
+	-1.0f, -1.0f, -1.0f,//      | |      | |
+	-1.0f,  1.0f,  1.0f,//      | 3------|-2
+	 1.0f,  1.0f,  1.0f,//      |/       |/
+	 1.0f,  1.0f, -1.0f,//      0--------1
+	-1.0f,  1.0f, -1.0f
+};
 
-	 1.0f,  1.0f,  1.0f, 1.0f,
-	 1.0f, -1.0f,  1.0f, 0.0f,
-	-1.0f,  1.0f,  0.0f, 1.0f
+unsigned int skyboxIndices[] =
+{
+	// Right
+	1, 2, 6,
+	6, 5, 1,
+	// Left
+	0, 4, 7,
+	7, 3, 0,
+	// Top
+	4, 5, 6,
+	6, 7, 4,
+	// Bottom
+	0, 3, 2,
+	2, 1, 0,
+	// Back
+	0, 1, 5,
+	5, 4, 0,
+	// Front
+	3, 7, 6,
+	6, 2, 3
 };
 
 
@@ -58,49 +82,6 @@ int main(void)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);//ONLY modern functions
 	
-	std::vector<Vertex> vertices  =     
-	{ //               COORDINATES           /           Normal         /       uvs         //
-	Vertex{glm::vec3(-1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
-	Vertex{glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
-	Vertex{glm::vec3(1.0f, 0.0f, -1.0f),  glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
-	Vertex{glm::vec3(1.0f, 0.0f,  1.0f),  glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)}
-	};
-	
-
-	std::vector<GLuint> indices =
-	{
-		0, 1, 2,
-		0, 2, 3
-	};
-
-	//light source
-	std::vector<Vertex> lightVertices =
-	{ //     COORDINATES     //
-		Vertex{glm::vec3(-0.1f, -0.1f,  0.1f)},
-		Vertex{glm::vec3(-0.1f, -0.1f, -0.1f)},
-		Vertex{glm::vec3(0.1f, -0.1f, -0.1f)},
-		Vertex{glm::vec3(0.1f, -0.1f,  0.1f)},
-		Vertex{glm::vec3(-0.1f,  0.1f,  0.1f)},
-		Vertex{glm::vec3(-0.1f,  0.1f, -0.1f)},
-		Vertex{glm::vec3(0.1f,  0.1f, -0.1f)},
-		Vertex{glm::vec3(0.1f,  0.1f,  0.1f)}
-	};
-	std::vector<GLuint> lightIndices =
-	{
-		0, 1, 2,
-		0, 2, 3,
-		0, 4, 7,
-		0, 7, 3,
-		3, 7, 6,
-		3, 6, 2,
-		2, 6, 5,
-		2, 5, 1,
-		1, 5, 4,
-		1, 4, 0,
-		4, 5, 6,
-		4, 6, 7
-	};
-
 
 
 	//window object
@@ -144,34 +125,17 @@ int main(void)
 
 	//shader objects
 	Shader shader("DefaultVertex.Shader", "DefaultFragment.Shader");
-	Shader lightShader("LightVert.Shader", "LightFrag.Shader");
-	Shader framebufferShader("FramebufferVert.Shader", "FramebufferFrag.Shader");
+	Shader skyboxShader("SkyboxVert.Shader", "SkyboxFrag.Shader");
+
 	
-	//texture objects 
-	//vector can create copies and detroy them right after
-	std::vector<Texture> textures;
-	textures.reserve(2);
-	textures.emplace_back("planks.png", "diffuse", 0);
-	textures.emplace_back("planksSpec.png", "specular", 1);
-	
-	Model model1("models/crow/scene.gltf");
-
-
-
-	//Mesh
-	Mesh mesh1(vertices, indices, textures);
+	//model
+	Model model1("models/airplane/scene.gltf");
 
 	//Camera
 	Camera camera(glm::vec3(0.0f, 5.0f, 5.0f), 5.0f, 0.1f, WIDTH, HEIGHT);
 
-	
 
-	//light mesh
-	Mesh lightMesh(lightVertices, lightIndices);
-
-
-
-	//Light source object
+	//Light source attrib
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	glm::vec3 lightPosition = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
@@ -182,9 +146,9 @@ int main(void)
 	shader.setUniform3f("cameraPosition", camera.getPosition());
 	shader.unbindProgram();
 
-	lightShader.bindProgram();
-	lightShader.setUniform4f("lightColor", lightColor);
-	lightShader.unbindProgram();
+	//skybox texture unit
+	skyboxShader.bindProgram();
+	skyboxShader.setUniform1i("skybox", 0);
 
 
 	
@@ -197,73 +161,73 @@ int main(void)
 	int numFrames = 0;
 	
 
-	/*Windows' positions*/
-	std::vector<glm::vec3> windowsPos
+	//Create VAO, VBO and EBO
+	unsigned int skyboxVAO, skyboxVBO, skyboxEBO;
+	glGenVertexArrays(1, &skyboxVAO);
+	glGenBuffers(1, &skyboxVBO);
+	glGenBuffers(1, &skyboxEBO);
+	glBindVertexArray(skyboxVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), &skyboxIndices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	//faces' of cubemap
+	std::string facesCubemap[6] =
 	{
-		glm::vec3(-1.5f, 0.0f, -0.48f),
-		glm::vec3(1.5f, 0.0f, 0.51f),
-		glm::vec3(0.0f, 0.0f, 0.7f),
-		glm::vec3(-0.3f, 0.0f, -2.3f),
-		glm::vec3(0.5f, 0.0f, -0.6f)
+		"skybox textures/right.jpg",
+		"skybox textures/left.jpg",
+		"skybox textures/top.jpg",
+		"skybox textures/bottom.jpg",
+		"skybox textures/front.jpg",
+		"skybox textures/back.jpg",
 	};
 
+	// Cubemap texture object
+	unsigned int cubemapTexture;
+	glGenTextures(1, &cubemapTexture);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-	/*Frame buffer
-		Why use framebuffer?
-		-To apply a global effect on the whole scene, we face a limitation: all the shaders work locally, 
-		vertex shaders only know about the current vertex, and fragment shaders only know about the current pixel.
-
-		-The only exception is when working with textures: 
-		in this case, we can access any part of the texture using texture coordinates.
-
-		-So the idea for post-processing is to first render the whole scene in a texture, 
-		and then render this single texture to screen with the post-processing.
-	*/
-
-	//Prepare framebuffer rectangle VBOand VAO
-	unsigned int rectVAO, rectVBO;
-	glGenVertexArrays(1, &rectVAO);
-	glGenBuffers(1, &rectVBO);
-	glBindVertexArray(rectVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVertices), &rectangleVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-
-
-	//Create framebufferobject and texture for framebuffer
-	unsigned int FBO;
-	glGenFramebuffers(1, &FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-	unsigned int framebufferTexture;
-	glGenTextures(1, &framebufferTexture);
-	glBindTexture(GL_TEXTURE_2D, framebufferTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);//clamp so the one side texture wont bleed to the other side
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebufferTexture, 0);
-
-	//renderbuffer object: faster than texture object but cant be accessed (directly) in shader
-	unsigned int RBO;
-	glGenRenderbuffers(1, &RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WIDTH, HEIGHT);
-	//attach to framebuffer
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
-
-	//check errors
-	auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
-		std::cout << "Framebuffer error: " << fboStatus << std::endl;
-
-	//set unit to texture
-	framebufferShader.setUniform1i("screenTexture", 0);
+	//Iterate thru all the textures and attaches them to the cubemap object
+	for(unsigned int i = 0; i < 6; i++)
+	{
+		int width, height, nrChannels;
+		unsigned char* data = stbi_load(facesCubemap[i].c_str(), &width, &height, &nrChannels, 0);
+		if (data)
+		{
+			//cube map texture start at top left
+			stbi_set_flip_vertically_on_load(false);
+			glTexImage2D
+			(
+				//cubemap's front is positive z
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+				0,
+				GL_RGB,
+				width,
+				height,
+				0,
+				GL_RGB,
+				GL_UNSIGNED_BYTE,
+				data
+			);
+			stbi_image_free(data);
+		}
+		else
+		{
+			std::cout << "Failed to load texture: " << facesCubemap[i] << std::endl;
+			stbi_image_free(data);
+		}
+	}
 
 	//Main loop
 	while(!glfwWindowShouldClose(window))
@@ -286,8 +250,7 @@ int main(void)
 		deltaTime = currentTime - prevTime2;
 		prevTime2 = currentTime;
 
-		//Bind the frame buffer 1st, draw everything to framebuffer (actually to the renderbuffer)
-		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+		
 		
 		//Set (the state) background colour
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
@@ -305,15 +268,31 @@ int main(void)
 		//Draw model
 		model1.draw(shader, camera);
 
-		//Switch back to default framebuffer to draw the quad (contains everything we drew to the framebuffer)
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		framebufferShader.bindProgram();
-		glBindVertexArray(rectVAO);
-		//disable depth test to make sure the quad is in front
-		glDisable(GL_DEPTH_TEST);
-		glBindTexture(GL_TEXTURE_2D, framebufferTexture);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		//Cube map
+		//since the cubemap will always have the depth of 1.0, we need equal sign so it doesnt get discarded
+		glDepthFunc(GL_LEQUAL);
 
+		skyboxShader.bindProgram();
+		glm::mat4 view = glm::mat4(1.0f);
+		glm::mat4 proj = glm::mat4(1.0f);
+		//we make the mat4 into a mat3 and then a mat4 again in order to get rid of the last row and column
+		//the last row and column affect the translation of the skybox (which we don't want to affect)
+		view = glm::mat4(glm::mat3(camera.calculateViewMatrix()));
+		proj = camera.calculateProjectionMatrix(glm::radians(45.0f), (float)WIDTH/HEIGHT, 0.1f, 100.0f);
+		skyboxShader.setUniformMatrix4fv("view", view);
+		skyboxShader.setUniformMatrix4fv("proj", proj);
+
+		//draws the cubemap as the last object so we can save a bit of performance by discarding all fragments
+		//where an object is present (a depth of 1.0f will always fail against any object's depth value)
+		glBindVertexArray(skyboxVAO);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+		
+		//switch back
+		glDepthFunc(GL_LESS);
+		
 		//Swap front and back buffers
 		glfwSwapBuffers(window);
 
@@ -322,7 +301,6 @@ int main(void)
 	}
 
 	//cleaning up
-	lightShader.deleteProgram();
 	shader.deleteProgram();
 
 	glfwDestroyWindow(window);

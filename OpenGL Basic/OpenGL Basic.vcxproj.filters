@@ -129,5 +129,11 @@
     <None Include="FramebufferVert.Shader">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="SkyboxVert.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="SkyboxFrag.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
