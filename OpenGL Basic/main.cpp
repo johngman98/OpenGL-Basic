@@ -32,42 +32,6 @@
 const int WIDTH = 800;
 const int HEIGHT = 800;
 
-float skyboxVertices[] =
-{
-	//   Coordinates
-	-1.0f, -1.0f,  1.0f,//        7--------6
-	 1.0f, -1.0f,  1.0f,//       /|       /|
-	 1.0f, -1.0f, -1.0f,//      4--------5 |
-	-1.0f, -1.0f, -1.0f,//      | |      | |
-	-1.0f,  1.0f,  1.0f,//      | 3------|-2
-	 1.0f,  1.0f,  1.0f,//      |/       |/
-	 1.0f,  1.0f, -1.0f,//      0--------1
-	-1.0f,  1.0f, -1.0f
-};
-
-unsigned int skyboxIndices[] =
-{
-	// Right
-	1, 2, 6,
-	6, 5, 1,
-	// Left
-	0, 4, 7,
-	7, 3, 0,
-	// Top
-	4, 5, 6,
-	6, 7, 4,
-	// Bottom
-	0, 3, 2,
-	2, 1, 0,
-	// Back
-	0, 1, 5,
-	5, 4, 0,
-	// Front
-	3, 7, 6,
-	6, 2, 3
-};
-
-
 int main(void)
 {
 	//init
@@ -125,11 +89,10 @@ int main(void)
 
 	//shader objects
 	Shader shader("DefaultVertex.Shader", "DefaultFragment.Shader");
-	Shader skyboxShader("SkyboxVert.Shader", "SkyboxFrag.Shader");
-
+	Shader gShader("g_Vert.Shader", "g_Frag.Shader", "g_Geo.Shader");
 	
 	//model
-	Model model1("models/airplane/scene.gltf");
+	Model model1("models/crow/scene.gltf");
 
 	//Camera
 	Camera camera(glm::vec3(0.0f, 5.0f, 5.0f), 5.0f, 0.1f, WIDTH, HEIGHT);
@@ -146,10 +109,11 @@ int main(void)
 	shader.setUniform3f("cameraPosition", camera.getPosition());
 	shader.unbindProgram();
 
-	//skybox texture unit
-	skyboxShader.bindProgram();
-	skyboxShader.setUniform1i("skybox", 0);
-
+	gShader.bindProgram();
+	gShader.setUniform4f("lightColor", lightColor);
+	gShader.setUniform3f("lightPosition", lightPosition);
+	gShader.setUniform3f("cameraPosition", camera.getPosition());
+	gShader.unbindProgram();
 
 	
 
@@ -161,73 +125,7 @@ int main(void)
 	int numFrames = 0;
 	
 
-	//Create VAO, VBO and EBO
-	unsigned int skyboxVAO, skyboxVBO, skyboxEBO;
-	glGenVertexArrays(1, &skyboxVAO);
-	glGenBuffers(1, &skyboxVBO);
-	glGenBuffers(1, &skyboxEBO);
-	glBindVertexArray(skyboxVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxEBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), &skyboxIndices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	//faces' of cubemap
-	std::string facesCubemap[6] =
-	{
-		"skybox textures/right.jpg",
-		"skybox textures/left.jpg",
-		"skybox textures/top.jpg",
-		"skybox textures/bottom.jpg",
-		"skybox textures/front.jpg",
-		"skybox textures/back.jpg",
-	};
-
-	// Cubemap texture object
-	unsigned int cubemapTexture;
-	glGenTextures(1, &cubemapTexture);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	//Iterate thru all the textures and attaches them to the cubemap object
-	for(unsigned int i = 0; i < 6; i++)
-	{
-		int width, height, nrChannels;
-		unsigned char* data = stbi_load(facesCubemap[i].c_str(), &width, &height, &nrChannels, 0);
-		if (data)
-		{
-			//cube map texture start at top left
-			stbi_set_flip_vertically_on_load(false);
-			glTexImage2D
-			(
-				//cubemap's front is positive z
-				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-				0,
-				GL_RGB,
-				width,
-				height,
-				0,
-				GL_RGB,
-				GL_UNSIGNED_BYTE,
-				data
-			);
-			stbi_image_free(data);
-		}
-		else
-		{
-			std::cout << "Failed to load texture: " << facesCubemap[i] << std::endl;
-			stbi_image_free(data);
-		}
-	}
+	
 
 	//Main loop
 	while(!glfwWindowShouldClose(window))
@@ -267,31 +165,7 @@ int main(void)
 
 		//Draw model
 		model1.draw(shader, camera);
-
-		//Cube map
-		//since the cubemap will always have the depth of 1.0, we need equal sign so it doesnt get discarded
-		glDepthFunc(GL_LEQUAL);
-
-		skyboxShader.bindProgram();
-		glm::mat4 view = glm::mat4(1.0f);
-		glm::mat4 proj = glm::mat4(1.0f);
-		//we make the mat4 into a mat3 and then a mat4 again in order to get rid of the last row and column
-		//the last row and column affect the translation of the skybox (which we don't want to affect)
-		view = glm::mat4(glm::mat3(camera.calculateViewMatrix()));
-		proj = camera.calculateProjectionMatrix(glm::radians(45.0f), (float)WIDTH/HEIGHT, 0.1f, 100.0f);
-		skyboxShader.setUniformMatrix4fv("view", view);
-		skyboxShader.setUniformMatrix4fv("proj", proj);
-
-		//draws the cubemap as the last object so we can save a bit of performance by discarding all fragments
-		//where an object is present (a depth of 1.0f will always fail against any object's depth value)
-		glBindVertexArray(skyboxVAO);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-		
-		//switch back
-		glDepthFunc(GL_LESS);
+		model1.draw(gShader, camera);
 		
 		//Swap front and back buffers
 		glfwSwapBuffers(window);

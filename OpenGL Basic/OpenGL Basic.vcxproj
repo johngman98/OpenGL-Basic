@@ -186,6 +186,9 @@
     <None Include="FramebufferFrag.Shader" />
     <None Include="FramebufferVert.Shader" />
     <None Include="GrassFrag.Shader" />
+    <None Include="g_Frag.Shader" />
+    <None Include="g_Geo.Shader" />
+    <None Include="g_Vert.Shader" />
     <None Include="LightFrag.Shader" />
     <None Include="LightVert.Shader" />
     <None Include="OutliningFrag.Shader" />

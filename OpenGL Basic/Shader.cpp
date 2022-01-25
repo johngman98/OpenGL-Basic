@@ -1,6 +1,6 @@
 #include "Shader.h"
 
-Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
+Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath)
 {
 	//aware of dangling pointers if use c_str directly
 	std::string vertextCode = getFileContent(vertexPath);
@@ -19,9 +19,20 @@ Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
 	glCompileShader(fragmentShaderID);
 	compileErrors(fragmentShaderID, "FRAGMENT_SHADER");
 
+	//geometry shader
+	GLuint geometryShaderID = glCreateShader(GL_GEOMETRY_SHADER);
+	if (!geometryPath.empty()) 
+	{
+		std::string geometryCode = getFileContent(geometryPath);
+		const char* geometrySource = geometryCode.c_str();
+		glShaderSource(geometryShaderID, 1, &geometrySource, NULL);
+		glCompileShader(geometryShaderID);
+		compileErrors(geometryShaderID, "GEOMETRY_SHADER");
+	}
 	m_ProgramID = glCreateProgram();
 	glAttachShader(m_ProgramID, vertexShaderID);
 	glAttachShader(m_ProgramID, fragmentShaderID);
+	if (!geometryPath.empty()) glAttachShader(m_ProgramID, geometryShaderID);
 	glLinkProgram(m_ProgramID);
 	compileErrors(m_ProgramID, "PROGRAM");
 
@@ -29,6 +40,11 @@ Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
 	glDetachShader(m_ProgramID, fragmentShaderID);
 	glDeleteShader(vertexShaderID);
 	glDeleteShader(fragmentShaderID);
+	if (!geometryPath.empty())
+	{
+		glDetachShader(m_ProgramID, geometryShaderID);
+		glDeleteShader(geometryShaderID);
+	}
 
 }
 

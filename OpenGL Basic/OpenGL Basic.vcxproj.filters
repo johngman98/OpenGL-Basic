@@ -135,5 +135,14 @@
     <None Include="SkyboxFrag.Shader">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="g_Vert.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="g_Frag.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="g_Geo.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
