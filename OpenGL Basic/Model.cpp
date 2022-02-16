@@ -1,6 +1,7 @@
 #include "Model.h"
 
-Model::Model(const std::string& filePath)
+Model::Model(const std::string& filePath, unsigned int numInstances, const std::vector<glm::mat4>& instanceMatrices)
+	:m_numIntances(numInstances), m_InstanceMatrices(instanceMatrices)
 {
 	/*Createand store a json object(how to interpret data)*/
 	std::string content = getFileContent(filePath);
@@ -252,7 +253,7 @@ void Model::loadMesh(unsigned int meshIndex)
 	std::vector<Texture> textures = getTexture();
 	
 	/*Create and store mesh*/
-	m_Meshes.push_back(Mesh(vertices, indices, textures));
+	m_Meshes.push_back(Mesh(vertices, indices, textures, m_numIntances, m_InstanceMatrices));
 }
 
 void Model::traverseNode(unsigned int nextNode, glm::mat4 matrix)

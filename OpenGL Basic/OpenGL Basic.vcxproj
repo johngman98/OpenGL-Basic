@@ -181,6 +181,7 @@
     <Image Include="pop_cat.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="AsteroidVert.Shader" />
     <None Include="DefaultFragment.Shader" />
     <None Include="DefaultVertex.Shader" />
     <None Include="FramebufferFrag.Shader" />

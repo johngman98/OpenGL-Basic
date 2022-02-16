@@ -144,5 +144,8 @@
     <None Include="g_Geo.Shader">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="AsteroidVert.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

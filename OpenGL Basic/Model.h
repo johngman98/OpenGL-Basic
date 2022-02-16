@@ -9,7 +9,7 @@ using json = nlohmann::json;
 class Model
 {
 public:
-	Model(const std::string& filePath);
+	Model(const std::string& filePath, unsigned int numInstances = 1, const std::vector<glm::mat4>& instanceMatrices = {});
 	~Model();
 
 	void draw(const Shader& shader, const Camera& camera);
@@ -37,6 +37,7 @@ private:
 	std::string m_FilePath;
 	std::vector<unsigned char> m_Data;
 	json m_JSON;
+	unsigned int m_numIntances;
 
 	//to keep track of which texture was loaded
 	std::vector<std::string> m_LoadedTextureNames;
@@ -49,5 +50,6 @@ private:
 	std::vector<glm::quat> m_RotationsMeshes;
 	std::vector<glm::vec3> m_ScalesMeshes;
 	std::vector<glm::mat4> m_MatricesMeshes;
+	std::vector<glm::mat4> m_InstanceMatrices;
 
 };

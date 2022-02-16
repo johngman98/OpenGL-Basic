@@ -13,6 +13,8 @@ class VBO
 {
 public:
 	VBO(const std::vector<Vertex>& vertices);
+	//for transformation matrices of instances
+	VBO(const std::vector<glm::mat4>& mat4s);
 	~VBO();
 
 	void bind() const; 

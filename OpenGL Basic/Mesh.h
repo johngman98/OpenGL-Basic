@@ -20,9 +20,8 @@ class Mesh
 {
 public:
 	/*Constructors and Deconstructors*/
-
-	Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices);
-	Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices, const std::vector<Texture>& textures);
+	Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices, const std::vector<Texture>& textures,
+		 unsigned int numInstances = 1, const std::vector<glm::mat4>& instanceMatrices = {});
 
 	~Mesh();
 
@@ -37,7 +36,7 @@ public:
 	/*Setters and Getters*/
 
 private:
-	void setUp() const;
+	
 
 private:
 	/*Mesh attributes*/
@@ -47,6 +46,9 @@ private:
 
 	/*Also is the mesh ID*/
 	VAO m_VAO;
+
+	/*Number of instances*/
+	unsigned int m_NumInstances;
 
 	
 };
