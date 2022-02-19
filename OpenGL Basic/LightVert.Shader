@@ -5,7 +5,14 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
 
+//transformations
+uniform mat4 translation;
+uniform mat4 rotation;
+uniform mat4 scale;
+
+
 void main()
 {
-	gl_Position = proj * view * model * vec4(aPos, 1.0f);
+	vec3 currentPos = vec3(model * translation * rotation * scale * vec4(aPos, 1.0f));
+	gl_Position = proj * view * vec4(currentPos, 1.0f);
 }

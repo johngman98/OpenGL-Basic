@@ -21,8 +21,8 @@ vec4 genPointLight()
 {
 	vec3 lightVector = lightPosition - currentPos;
 	float distance = length(lightVector);
-	float quadraticCoef = 0.032f;
-	float linearCoef = 0.09f;
+	float quadraticCoef = 3.0f	;
+	float linearCoef = 0.7f;
 	float constant = 1.0f;
 	float attenuation = 1.0f / (quadraticCoef * distance * distance + linearCoef * distance + constant);
 
@@ -35,12 +35,21 @@ vec4 genPointLight()
 	float diffuse = max(dot(normal, lightDirection), 0.0f);//make sure its positive
 
 	//specular light
-	float specularStrength = 0.5f;
-	vec3 viewDirection = normalize(cameraPosition - currentPos);
-	vec3 reflectDirection = reflect(-lightDirection, normal);//reflect 1st argument is from the light to object
-	float specAmount = pow(max(dot(viewDirection, reflectDirection), 0.0f), 16);
-	float specular = specAmount * specularStrength;
+	float specular = 0.0f; //init
+	if (diffuse != 0.0f) 
+	{ //to prevent light shine on the otherside if the lightsource is under
+		float specularStrength = 0.5f;
+		vec3 viewDirection = normalize(cameraPosition - currentPos);
+		vec3 reflectDirection = reflect(-lightDirection, normal);//reflect 1st argument is from the light to object
 
+		//halfway vector 
+		vec3 halfwayVec = normalize(viewDirection + reflectDirection);
+
+		//if angle of view and reflect vectors > 90 -> dot prod < 0 -> max = 0
+		//use halfway vector to prevent cutoff
+		float specAmount = pow(max(dot(viewDirection, reflectDirection), 0.0f), 16);
+		specular = specAmount * specularStrength;
+	}
 	return (texture(diffuse0, texCoord) * (ambient + diffuse * attenuation) + (texture(specular0, texCoord).r) * specular * attenuation) * lightColor;
 }
 vec4 genDirectionalLight()
@@ -55,11 +64,21 @@ vec4 genDirectionalLight()
 	float diffuse = max(dot(normal, lightDirection), 0.0f);//make sure its positive
 
 	//specular light
-	float specularStrength = 0.5f;
-	vec3 viewDirection = normalize(cameraPosition - currentPos);
-	vec3 reflectDirection = reflect(-lightDirection, normal);//reflect 1st argument is from the light to object
-	float specAmount = pow(max(dot(viewDirection, reflectDirection), 0.0f), 16);
-	float specular = specAmount * specularStrength;
+	float specular = 0.0f; //init
+	if (diffuse != 0.0f)
+	{ //to prevent light shine on the otherside if the lightsource is under
+		float specularStrength = 0.5f;
+		vec3 viewDirection = normalize(cameraPosition - currentPos);
+		vec3 reflectDirection = reflect(-lightDirection, normal);//reflect 1st argument is from the light to object
+
+		//halfway vector 
+		vec3 halfwayVec = normalize(viewDirection + reflectDirection);
+
+		//if angle of view and reflect vectors > 90 -> dot prod < 0 -> max = 0
+		//use halfway vector to prevent cutoff
+		float specAmount = pow(max(dot(viewDirection, reflectDirection), 0.0f), 16);
+		specular = specAmount * specularStrength;
+	}
 
 	return (texture(diffuse0, texCoord) * (ambient + diffuse) + (texture(specular0, texCoord).r) * specular ) * lightColor;
 }
@@ -75,12 +94,22 @@ vec4 genSpotLight(float cutOff)
 	vec3 lightDirection = normalize(lightVector);//vector dir from object's pos -> light's pos
 	float diffuse = max(dot(normal, lightDirection), 0.0f);//make sure its positive
 
-	//specular light
-	float specularStrength = 0.5f;
-	vec3 viewDirection = normalize(cameraPosition - currentPos);
-	vec3 reflectDirection = reflect(-lightDirection, normal);//reflect 1st argument is from the light to object
-	float specAmount = pow(max(dot(viewDirection, reflectDirection), 0.0f), 16);
-	float specular = specAmount * specularStrength;
+		//specular light
+	float specular = 0.0f; //init
+	if (diffuse != 0.0f)
+	{ //to prevent light shine on the otherside if the lightsource is under
+		float specularStrength = 0.5f;
+		vec3 viewDirection = normalize(cameraPosition - currentPos);
+		vec3 reflectDirection = reflect(-lightDirection, normal);//reflect 1st argument is from the light to object
+
+		//halfway vector 
+		vec3 halfwayVec = normalize(viewDirection + reflectDirection);
+
+		//if angle of view and reflect vectors > 90 -> dot prod < 0 -> max = 0
+		//use halfway vector to prevent cutoff
+		float specAmount = pow(max(dot(viewDirection, reflectDirection), 0.0f), 16);
+		specular = specAmount * specularStrength;
+	}
 
 	//check to see if the fragment will be lit
 	float theta = dot(-lightDirection, vec3(0.0f, -1.0f, 0.0f));//angle between -lightDir and -Oy
@@ -117,7 +146,7 @@ float logisticDepth(float depth, float steepness = 0.5f, float offset = 5.0f)
 void main()
 {
 	//Output Light
-	fragColor = genDirectionalLight();
+	fragColor = genPointLight();
 
 	//Visualize depth testing
 	//screen space coords (viewport) can be accessed thru gl_FragCoord

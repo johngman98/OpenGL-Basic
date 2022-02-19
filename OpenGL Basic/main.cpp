@@ -32,23 +32,49 @@
 const int WIDTH = 800;
 const int HEIGHT = 800;
 
-float rectangleVertices[] =
-{
-	// Coords    // texCoords
-	 1.0f, -1.0f,  1.0f, 0.0f,
-	-1.0f, -1.0f,  0.0f, 0.0f,
-	-1.0f,  1.0f,  0.0f, 1.0f,
-
-	 1.0f,  1.0f,  1.0f, 1.0f,
-	 1.0f, -1.0f,  1.0f, 0.0f,
-	-1.0f,  1.0f,  0.0f, 1.0f
+std::vector<Vertex> vertices =
+{ //               COORDINATES           /           Normal         /       uvs         //
+Vertex{glm::vec3(-1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
+Vertex{glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
+Vertex{glm::vec3(1.0f, 0.0f, -1.0f),  glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
+Vertex{glm::vec3(1.0f, 0.0f,  1.0f),  glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)}
 };
-const unsigned int NUM_SAMPLES = 8;
 
-float randf()
+
+std::vector<GLuint> indices =
 {
-	return -1.0f + (rand() / (RAND_MAX / 2.0f));
-}
+	0, 1, 2,
+	0, 2, 3
+};
+
+//light source
+std::vector<Vertex> lightVertices =
+{ //     COORDINATES     //
+	Vertex{glm::vec3(-0.1f, -0.1f,  0.1f)},
+	Vertex{glm::vec3(-0.1f, -0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f, -0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f, -0.1f,  0.1f)},
+	Vertex{glm::vec3(-0.1f,  0.1f,  0.1f)},
+	Vertex{glm::vec3(-0.1f,  0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f,  0.1f, -0.1f)},
+	Vertex{glm::vec3(0.1f,  0.1f,  0.1f)}
+};
+std::vector<GLuint> lightIndices =
+{
+	0, 1, 2,
+	0, 2, 3,
+	0, 4, 7,
+	0, 7, 3,
+	3, 7, 6,
+	3, 6, 2,
+	2, 6, 5,
+	2, 5, 1,
+	1, 5, 4,
+	1, 4, 0,
+	4, 5, 6,
+	4, 6, 7
+};
+
 
 int main(void)
 {
@@ -94,13 +120,13 @@ int main(void)
 	//depth value is 0.0f at near plane and 1.0f at far plane
 	glEnable(GL_DEPTH_TEST);
 	// Enable Multi Sampling
-	glEnable(GL_MULTISAMPLE);
+	//glEnable(GL_MULTISAMPLE);
 	// Enable Cull Facing
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 	// Keeps front faces
-	glCullFace(GL_FRONT);
+	//glCullFace(GL_FRONT);
 	// Uses counter clock-wise standard
-	glFrontFace(GL_CCW);
+	//glFrontFace(GL_CCW);
 
 	//viewport: part where objects will be rendered
 	glViewport(0, 0, WIDTH, HEIGHT);
@@ -110,11 +136,15 @@ int main(void)
 
 	//shader objects
 	Shader shader("DefaultVertex.Shader", "DefaultFragment.Shader");
-	Shader framebufferShader("FramebufferVert.Shader", "FramebufferFrag.Shader");
+	
 
 	//model
-	Model crow("models/crow/scene.gltf");
-	
+	//Model crow("models/crow/scene.gltf");
+
+	Texture tex1("planks.png", "diffuse");
+	Texture tex2("planksSpec.png", "specular");
+	std::vector<Texture> textures = { tex1, tex2 };
+	Mesh mesh1(vertices, indices, textures);
 
 	//Camera
 	Camera camera(glm::vec3(0.0f, 5.0f, 5.0f), 5.0f, 0.1f, WIDTH, HEIGHT);
@@ -122,7 +152,7 @@ int main(void)
 
 	//Light source attrib
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPosition = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 lightPosition = glm::vec3(0.0f, 0.5f, 0.0f);
 	glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
 	//send uniforms relate to light calculation
 	shader.bindProgram();
@@ -131,7 +161,14 @@ int main(void)
 	shader.setUniform3f("cameraPosition", camera.getPosition());
 	shader.unbindProgram();
 
-	
+	//light
+	Shader lightShader("LightVert.Shader", "LightFrag.Shader");
+	//light mesh
+	Mesh lightMesh(lightVertices, lightIndices, textures);
+	lightShader.bindProgram();
+	lightShader.setUniform4f("lightColor", lightColor);
+	lightShader.unbindProgram();
+
 
 	//for delta time
 	float rotation = 0.5f;
@@ -141,73 +178,7 @@ int main(void)
 	int numFrames = 0;
 	
 
-	// Framebuffer for multi sample, cant use to post-process
-	unsigned int rectVAO, rectVBO;
-	glGenVertexArrays(1, &rectVAO);
-	glGenBuffers(1, &rectVBO);
-	glBindVertexArray(rectVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVertices), &rectangleVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-
-
-	//Create framebufferobject and texture for framebuffer
-	unsigned int FBO;
-	glGenFramebuffers(1, &FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-	// Create Framebuffer Texture
-	unsigned int framebufferTexture;
-	glGenTextures(1, &framebufferTexture);
-	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, framebufferTexture);
-	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, NUM_SAMPLES, GL_RGB, WIDTH, HEIGHT, GL_TRUE);
-	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // Prevents edge bleeding
-	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Prevents edge bleeding
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, framebufferTexture, 0);
-
-	// Create Render Buffer Object
-	unsigned int RBO;
-	glGenRenderbuffers(1, &RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, NUM_SAMPLES, GL_DEPTH24_STENCIL8, WIDTH, HEIGHT);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
-
-
-	// Error checking framebuffer
-	auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
-		std::cout << "Framebuffer error: " << fboStatus << std::endl;
-
-	//set unit to texture
-	framebufferShader.setUniform1i("screenTexture", 0);
-
-	// Normal Framebuffer for post-processing
-	//create Frame Buffer Object
-	unsigned int postProcessingFBO;
-	glGenFramebuffers(1, &postProcessingFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
-
-	//create Framebuffer Texture
-	unsigned int postProcessingTexture;
-	glGenTextures(1, &postProcessingTexture);
-	glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessingTexture, 0);
-
-	//error checking framebuffer
-	fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
-		std::cout << "Post-Processing Framebuffer error: " << fboStatus << std::endl;
+	
 
 	//Main loop
 	while(!glfwWindowShouldClose(window))
@@ -230,8 +201,6 @@ int main(void)
 		deltaTime = currentTime - prevTime2;
 		prevTime2 = currentTime;
 		
-		//Bind the multi sampling frame buffer 1st
-		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 		
 		//Set (the state) background colour
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
@@ -239,8 +208,6 @@ int main(void)
 		//Clear the back buffer and assign the new color to it
 		//Clear the depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		// Enable depth testing since it's disabled when drawing the framebuffer rectangle
-		glEnable(GL_DEPTH_TEST);
 
 		//Camera
 		camera.processInputs(window, WIDTH, HEIGHT, deltaTime);
@@ -248,23 +215,15 @@ int main(void)
 		//mesh1.draw(shader, camera);
 
 		//Draw model
+		mesh1.draw(shader, camera, glm::mat4(1.0f),
+			glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+			glm::vec3(2.0f, 2.0f, 2.0f));
+		lightMesh.draw(lightShader, camera,  glm::mat4(1.0f),
+			lightPosition,
+			glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+			glm::vec3(1.0f, 1.0f, 1.0f));
 	
-		crow.draw(shader, camera);
-
-		// Make it so the multisampling FBO is read while the post-processing FBO is drawn
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
-		// Conclude the multisampling and copy it to the post-processing FBO
-		glBlitFramebuffer(0, 0, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-		//Switch back to default framebuffer to draw the quad (contains everything we drew to the framebuffer)
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		framebufferShader.bindProgram();
-		glBindVertexArray(rectVAO);
-		//disable depth test to make sure the quad is in front
-		glDisable(GL_DEPTH_TEST);
-		glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		//Swap front and back buffers
 		glfwSwapBuffers(window);
