@@ -122,7 +122,7 @@ int main(void)
 	Shader shader("DefaultVertex.Shader", "DefaultFragment.Shader");
 	Shader framebufferShader("FramebufferVert.Shader", "FramebufferFrag.Shader");
 	Shader shadowMapShader("shadowMapVert.Shader", "shadowMapFrag.Shader");
-	Shader shadowCubeMapShader("shadowCubeMapVert.Shader", "shadowCubeMapGeo.Shader", "shadowCubeMapFrag.Shader");
+	Shader shadowCubeMapShader("shadowCubeMapVert.Shader", "shadowCubeMapFrag.Shader", "shadowCubeMapGeo.Shader");
 
 	//model
 	Model crow("models/crow/scene.gltf");
@@ -138,7 +138,7 @@ int main(void)
 
 	//Light source attrib
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPosition = glm::vec3(0.0f, 50.0f, 0.0f);
+	glm::vec3 lightPosition = glm::vec3(0.0f, 20.0f, 0.0f);
 	glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
 	//send uniforms relate to light calculation
 	shader.bindProgram();
@@ -270,7 +270,54 @@ int main(void)
 	shadowMapShader.unbindProgram();
 
 
-	
+	// Framebuffer for Cubemap Shadow Map
+	unsigned int pointShadowMapFBO;
+	glGenFramebuffers(1, &pointShadowMapFBO);
+
+	// Texture for Cubemap Shadow Map FBO
+	unsigned int depthCubemap;
+	glGenTextures(1, &depthCubemap);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
+	for (unsigned int i = 0; i < 6; ++i)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
+			shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, pointShadowMapFBO);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+	// Matrices needed for the light's perspective on all faces of the cubemap
+	glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, farPlane);
+	glm::mat4 shadowTransforms[] =
+	{
+		shadowProj * glm::lookAt(lightPosition, lightPosition + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)),
+		shadowProj * glm::lookAt(lightPosition, lightPosition + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)),
+		shadowProj * glm::lookAt(lightPosition, lightPosition + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)),
+		shadowProj * glm::lookAt(lightPosition, lightPosition + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)),
+		shadowProj * glm::lookAt(lightPosition, lightPosition + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)),
+		shadowProj * glm::lookAt(lightPosition, lightPosition + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0))
+	};
+	// Export all matrices to shader
+	shadowCubeMapShader.bindProgram();
+	shadowCubeMapShader.setUniformMatrix4fv("shadowMatrices[0]", shadowTransforms[0]);
+	shadowCubeMapShader.setUniformMatrix4fv("shadowMatrices[1]", shadowTransforms[1]);
+	shadowCubeMapShader.setUniformMatrix4fv("shadowMatrices[2]", shadowTransforms[2]);
+	shadowCubeMapShader.setUniformMatrix4fv("shadowMatrices[3]", shadowTransforms[3]);
+	shadowCubeMapShader.setUniformMatrix4fv("shadowMatrices[4]", shadowTransforms[4]);
+	shadowCubeMapShader.setUniformMatrix4fv("shadowMatrices[5]", shadowTransforms[5]);
+	shadowCubeMapShader.setUniform3f("lightPosition", lightPosition);
+	shadowCubeMapShader.setUniform1f("farPlane", farPlane);
+	shadowCubeMapShader.unbindProgram();
+
 
 
 
@@ -300,16 +347,20 @@ int main(void)
 
 		// Preparations for the Shadow Map
 		glViewport(0, 0, shadowMapWidth, shadowMapHeight);
-		glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, pointShadowMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		// Draw scene for shadow map
-		mesh1.draw(shadowMapShader, camera, glm::mat4(1.0f),
+		mesh1.draw(shadowCubeMapShader, camera, glm::mat4(1.0f),
 			glm::vec3(0.0f, 0.0f, 0.0f),
 			glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
 			glm::vec3(50.0f, 50.0f, 50.0f));
+		mesh1.draw(shadowCubeMapShader, camera, glm::mat4(1.0f),
+			glm::vec3(10.0f, 0.0f, 0.0f),
+			glm::quat(1.0f, 1.0f, 0.0f, 0.0f),
+			glm::vec3(50.0f, 50.0f, 50.0f));
 
-		crow.draw(shadowMapShader, camera);
+		crow.draw(shadowCubeMapShader, camera);
 
 
 		// Switch back to the default framebuffer
@@ -331,17 +382,21 @@ int main(void)
 		//light proj to default shader
 		shader.bindProgram();
 		shader.setUniformMatrix4fv("lightProjection", lightProjection);
+		shader.setUniform1f("farPlane", farPlane);
 
 		// Add shadow map as texture, have to set manually since Texture obj doesnt support this
 		glActiveTexture(GL_TEXTURE0 + 2);
-		glBindTexture(GL_TEXTURE_2D, shadowMap);
-		shader.setUniform1i("shadowMap", 2);
-		shader.unbindProgram();
+		glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
+		shader.setUniform1i("shadowCubeMap", 2);
 
 		//Draw model
 		mesh1.draw(shader, camera, glm::mat4(1.0f),
 			glm::vec3(0.0f, 0.0f, 0.0f),
 			glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+			glm::vec3(50.0f, 50.0f, 50.0f));
+		mesh1.draw(shader, camera, glm::mat4(1.0f),
+			glm::vec3(10.0f, 0.0f, 0.0f),
+			glm::quat(1.0f, 1.0f, 0.0f, 0.0f),
 			glm::vec3(50.0f, 50.0f, 50.0f));
 
 		crow.draw(shader, camera);
