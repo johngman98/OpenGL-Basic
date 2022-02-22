@@ -147,5 +147,11 @@
     <None Include="AsteroidVert.Shader">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="shadowMapVert.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="shadowMapFrag.shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

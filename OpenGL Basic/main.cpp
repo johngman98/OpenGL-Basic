@@ -47,34 +47,18 @@ std::vector<GLuint> indices =
 	0, 2, 3
 };
 
-//light source
-std::vector<Vertex> lightVertices =
-{ //     COORDINATES     //
-	Vertex{glm::vec3(-0.1f, -0.1f,  0.1f)},
-	Vertex{glm::vec3(-0.1f, -0.1f, -0.1f)},
-	Vertex{glm::vec3(0.1f, -0.1f, -0.1f)},
-	Vertex{glm::vec3(0.1f, -0.1f,  0.1f)},
-	Vertex{glm::vec3(-0.1f,  0.1f,  0.1f)},
-	Vertex{glm::vec3(-0.1f,  0.1f, -0.1f)},
-	Vertex{glm::vec3(0.1f,  0.1f, -0.1f)},
-	Vertex{glm::vec3(0.1f,  0.1f,  0.1f)}
-};
-std::vector<GLuint> lightIndices =
+float rectangleVertices[] =
 {
-	0, 1, 2,
-	0, 2, 3,
-	0, 4, 7,
-	0, 7, 3,
-	3, 7, 6,
-	3, 6, 2,
-	2, 6, 5,
-	2, 5, 1,
-	1, 5, 4,
-	1, 4, 0,
-	4, 5, 6,
-	4, 6, 7
-};
+	// Coords    // texCoords
+	 1.0f, -1.0f,  1.0f, 0.0f,
+	-1.0f, -1.0f,  0.0f, 0.0f,
+	-1.0f,  1.0f,  0.0f, 1.0f,
 
+	 1.0f,  1.0f,  1.0f, 1.0f,
+	 1.0f, -1.0f,  1.0f, 0.0f,
+	-1.0f,  1.0f,  0.0f, 1.0f
+};
+const unsigned int NUM_SAMPLES = 8;
 
 int main(void)
 {
@@ -136,10 +120,11 @@ int main(void)
 
 	//shader objects
 	Shader shader("DefaultVertex.Shader", "DefaultFragment.Shader");
-	
+	Shader framebufferShader("FramebufferVert.Shader", "FramebufferFrag.Shader");
+	Shader shadowMapShader("shadowMapVert.Shader", "shadowMapFrag.Shader");
 
 	//model
-	//Model crow("models/crow/scene.gltf");
+	Model crow("models/crow/scene.gltf");
 
 	Texture tex1("planks.png", "diffuse");
 	Texture tex2("planksSpec.png", "specular");
@@ -147,12 +132,12 @@ int main(void)
 	Mesh mesh1(vertices, indices, textures);
 
 	//Camera
-	Camera camera(glm::vec3(0.0f, 5.0f, 5.0f), 5.0f, 0.1f, WIDTH, HEIGHT);
+	Camera camera(glm::vec3(0.0f, 5.0f, 5.0f), 50.0f, 0.1f, WIDTH, HEIGHT);
 
 
 	//Light source attrib
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPosition = glm::vec3(0.0f, 0.5f, 0.0f);
+	glm::vec3 lightPosition = glm::vec3(0.5f, 0.5f, 0.5f);
 	glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
 	//send uniforms relate to light calculation
 	shader.bindProgram();
@@ -161,13 +146,7 @@ int main(void)
 	shader.setUniform3f("cameraPosition", camera.getPosition());
 	shader.unbindProgram();
 
-	//light
-	Shader lightShader("LightVert.Shader", "LightFrag.Shader");
-	//light mesh
-	Mesh lightMesh(lightVertices, lightIndices, textures);
-	lightShader.bindProgram();
-	lightShader.setUniform4f("lightColor", lightColor);
-	lightShader.unbindProgram();
+
 
 
 	//for delta time
@@ -177,17 +156,126 @@ int main(void)
 	double prevTime2 = glfwGetTime();
 	int numFrames = 0;
 	
+	// Framebuffer for multi sample, cant use to post-process
+	unsigned int rectVAO, rectVBO;
+	glGenVertexArrays(1, &rectVAO);
+	glGenBuffers(1, &rectVBO);
+	glBindVertexArray(rectVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVertices), &rectangleVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
-	
+
+
+	//Create framebufferobject and texture for framebuffer
+	unsigned int FBO;
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+	// Create Framebuffer Texture
+	unsigned int framebufferTexture;
+	glGenTextures(1, &framebufferTexture);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, framebufferTexture);
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, NUM_SAMPLES, GL_RGB, WIDTH, HEIGHT, GL_TRUE);
+	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // Prevents edge bleeding
+	glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Prevents edge bleeding
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, framebufferTexture, 0);
+
+	// Create Render Buffer Object
+	unsigned int RBO;
+	glGenRenderbuffers(1, &RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, NUM_SAMPLES, GL_DEPTH24_STENCIL8, WIDTH, HEIGHT);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+
+	// Error checking framebuffer
+	auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Framebuffer error: " << fboStatus << std::endl;
+
+	//set unit to texture
+	framebufferShader.bindProgram();
+	framebufferShader.setUniform1i("screenTexture", 0);
+	framebufferShader.unbindProgram();
+
+	// Normal Framebuffer for post-processing
+	//create Frame Buffer Object
+	unsigned int postProcessingFBO;
+	glGenFramebuffers(1, &postProcessingFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
+
+	//create Framebuffer Texture
+	unsigned int postProcessingTexture;
+	glGenTextures(1, &postProcessingTexture);
+	glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessingTexture, 0);
+
+	//error checking framebuffer
+	fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Post-Processing Framebuffer error: " << fboStatus << std::endl;
+
+
+	// Framebuffer for Shadow Map
+	// Shadow Map/depth Map is the texture as rendered from the light's perspective
+	// Then we will use this for shadow testing (determine if a frag is in light or not)
+	// Framebuffer for Shadow Map
+	unsigned int shadowMapFBO;
+	glGenFramebuffers(1, &shadowMapFBO);
+
+	// Texture for Shadow Map FBO
+	unsigned int shadowMapWidth = 2048, shadowMapHeight = 2048;
+	unsigned int shadowMap;
+	glGenTextures(1, &shadowMap);
+	glBindTexture(GL_TEXTURE_2D, shadowMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowMapWidth, shadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	// Prevents darkness outside the frustrum
+	float clampColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, clampColor);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMap, 0);
+	// Needed since we don't touch the color buffer
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+	// Matrices needed for the light's perspective
+	glm::mat4 orthgonalProjection = glm::ortho(-35.0f, 35.0f, -35.0f, 35.0f, 0.1f, 75.0f);
+	glm::mat4 lightView = glm::lookAt(20.0f * lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 lightProjection = orthgonalProjection * lightView;
+
+	// Since the light source doenst move, only need to be done once
+	shadowMapShader.bindProgram();
+	shadowMapShader.setUniformMatrix4fv("lightProjection", lightProjection);
+	shadowMapShader.unbindProgram();
+
+
 
 	//Main loop
-	while(!glfwWindowShouldClose(window))
-	{	
+	while (!glfwWindowShouldClose(window))
+	{
 		//Simple timer
 		double currentTime = glfwGetTime();
 		numFrames++;
 		//update every second
-		if(currentTime - prevTime1 >= 1.0)
+		if (currentTime - prevTime1 >= 1.0)
 		{
 			std::string FPS = std::to_string(numFrames);
 			std::string ms = std::to_string(1000.0 / numFrames);
@@ -200,30 +288,72 @@ int main(void)
 		}
 		deltaTime = currentTime - prevTime2;
 		prevTime2 = currentTime;
-		
-		
-		//Set (the state) background colour
-		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+		// Depth testing needed for Shadow Map
+		// Depth testing needed for Shadow Map
+		glEnable(GL_DEPTH_TEST);
 
-		//Clear the back buffer and assign the new color to it
-		//Clear the depth buffer
+		// Preparations for the Shadow Map
+		glViewport(0, 0, shadowMapWidth, shadowMapHeight);
+		glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
+
+		// Draw scene for shadow map
+		mesh1.draw(shadowMapShader, camera, glm::mat4(1.0f),
+			glm::vec3(0.0f, 0.0f, 0.0f),
+			glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+			glm::vec3(50.0f, 50.0f, 50.0f));
+
+		crow.draw(shadowMapShader, camera);
+
+
+		// Switch back to the default framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// Switch back to the default viewport
+		glViewport(0, 0, WIDTH, HEIGHT);
+		// Bind the custom framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+		// Specify the color of the background
+		glClearColor(0.07f, 0.13f ,0.17f , 1.0f);
+		// Clean the back buffer and depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// Enable depth testing since it's disabled when drawing the framebuffer rectangle
+		glEnable(GL_DEPTH_TEST);
 
 		//Camera
 		camera.processInputs(window, WIDTH, HEIGHT, deltaTime);
-		
-		//mesh1.draw(shader, camera);
+
+		//light proj to default shader
+		shader.bindProgram();
+		shader.setUniformMatrix4fv("lightProjection", lightProjection);
+
+		// Add shadow map as texture, have to set manually since Texture obj doesnt support this
+		glActiveTexture(GL_TEXTURE0 + 2);
+		glBindTexture(GL_TEXTURE_2D, shadowMap);
+		shader.setUniform1i("shadowMap", 2);
+		shader.unbindProgram();
 
 		//Draw model
 		mesh1.draw(shader, camera, glm::mat4(1.0f),
 			glm::vec3(0.0f, 0.0f, 0.0f),
 			glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
-			glm::vec3(2.0f, 2.0f, 2.0f));
-		lightMesh.draw(lightShader, camera,  glm::mat4(1.0f),
-			lightPosition,
-			glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
-			glm::vec3(1.0f, 1.0f, 1.0f));
-	
+			glm::vec3(50.0f, 50.0f, 50.0f));
+
+		crow.draw(shader, camera);
+
+		// Make it so the multisampling FBO is read while the post-processing FBO is drawn
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postProcessingFBO);
+		// Conclude the multisampling and copy it to the post-processing FBO
+		glBlitFramebuffer(0, 0, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+		//Switch back to default framebuffer to draw the quad (contains everything we drew to the framebuffer)
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		framebufferShader.bindProgram();
+		glBindVertexArray(rectVAO);
+		//disable depth test to make sure the quad is in front
+		glDisable(GL_DEPTH_TEST);
+		glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		//Swap front and back buffers
 		glfwSwapBuffers(window);
@@ -234,7 +364,8 @@ int main(void)
 
 	//cleaning up
 	shader.deleteProgram();
-
+	glDeleteFramebuffers(1, &FBO);
+	glDeleteFramebuffers(1, &postProcessingFBO);
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	std::cout << "--------------END of main function-----------" << std::endl;

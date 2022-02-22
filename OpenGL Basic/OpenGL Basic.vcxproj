@@ -194,6 +194,8 @@
     <None Include="LightVert.Shader" />
     <None Include="OutliningFrag.Shader" />
     <None Include="OutLiningVert.Shader" />
+    <None Include="shadowMapVert.Shader" />
+    <None Include="shadowMapFrag.shader" />
     <None Include="SkyboxFrag.Shader" />
     <None Include="SkyboxVert.Shader" />
     <None Include="WindowsFrag.Shader" />

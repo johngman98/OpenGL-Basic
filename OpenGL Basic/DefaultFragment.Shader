@@ -5,6 +5,7 @@
 in vec2 texCoord;
 in vec3 currentPos;
 in vec3 Normal;
+in vec4 fragPositionLight;
 
 //outputs
 out vec4 fragColor;
@@ -12,6 +13,7 @@ out vec4 fragColor;
 //texture sampler
 uniform sampler2D diffuse0;
 uniform sampler2D specular0;
+uniform sampler2D shadowMap;
 //uniform sampler2D tex2;
 uniform vec4 lightColor;
 uniform vec3 lightPosition;
@@ -69,18 +71,46 @@ vec4 genDirectionalLight()
 	{ //to prevent light shine on the otherside if the lightsource is under
 		float specularStrength = 0.5f;
 		vec3 viewDirection = normalize(cameraPosition - currentPos);
-		vec3 reflectDirection = reflect(-lightDirection, normal);//reflect 1st argument is from the light to object
-
+	
 		//halfway vector 
-		vec3 halfwayVec = normalize(viewDirection + reflectDirection);
+		vec3 halfwayVec = normalize(viewDirection + lightDirection);
 
 		//if angle of view and reflect vectors > 90 -> dot prod < 0 -> max = 0
 		//use halfway vector to prevent cutoff
-		float specAmount = pow(max(dot(viewDirection, reflectDirection), 0.0f), 16);
+		float specAmount = pow(max(dot(normal, halfwayVec), 0.0f), 16);
 		specular = specAmount * specularStrength;
 	}
+	// Shadow value [0.0, 1.0]
+	float shadow = 0.0f; 
+	// Sets lightCoords to clipped space
+	vec3 lightCoords = fragPositionLight.xyz / fragPositionLight.w;
+	if (lightCoords.z <= 1.0f) //inside of the frustrum of orthographic proj
+	{
+		// Get from [-1, 1] range to [0, 1] range just like the shadow map
+		lightCoords = (lightCoords + 1.0f) / 2.0f;
+		float closestDepth = texture(shadowMap, lightCoords.xy).r;
+		float currentDepth = lightCoords.z;
+		// Prevents shadow acne
+		float bias = max(0.025f * (1.0f - dot(normal, lightDirection)), 0.0005f);
+		// Smoothens out the shadows
+		int sampleRadius = 2;
+		vec2 pixelSize = 1.0 / textureSize(shadowMap, 0);
+		for (int y = -sampleRadius; y <= sampleRadius; y++)
+		{
+			for (int x = -sampleRadius; x <= sampleRadius; x++)
+			{
+				float closestDepth = texture(shadowMap, lightCoords.xy + vec2(x, y) * pixelSize).r;
+				if (currentDepth > closestDepth + bias)
+					shadow += 1.0f;
+			}
+		}
+		// Get average shadow
+		shadow /= pow((sampleRadius * 2 + 1), 2);
 
-	return (texture(diffuse0, texCoord) * (ambient + diffuse) + (texture(specular0, texCoord).r) * specular ) * lightColor;
+	}
+
+
+	return (texture(diffuse0, texCoord) * (ambient + diffuse * (1.0f - shadow)) + (texture(specular0, texCoord).r) * specular * (1.0f - shadow)) * lightColor;
 }
 vec4 genSpotLight(float cutOff)
 {	
@@ -146,7 +176,7 @@ float logisticDepth(float depth, float steepness = 0.5f, float offset = 5.0f)
 void main()
 {
 	//Output Light
-	fragColor = genPointLight();
+	fragColor = genDirectionalLight();
 
 	//Visualize depth testing
 	//screen space coords (viewport) can be accessed thru gl_FragCoord
