@@ -153,5 +153,14 @@
     <None Include="shadowMapFrag.shader">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="shadowCubeMapVert.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="shadowCubeMapGeo.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="shadowCubeMapFrag.Shader">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

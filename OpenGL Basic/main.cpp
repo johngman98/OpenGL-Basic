@@ -122,6 +122,7 @@ int main(void)
 	Shader shader("DefaultVertex.Shader", "DefaultFragment.Shader");
 	Shader framebufferShader("FramebufferVert.Shader", "FramebufferFrag.Shader");
 	Shader shadowMapShader("shadowMapVert.Shader", "shadowMapFrag.Shader");
+	Shader shadowCubeMapShader("shadowCubeMapVert.Shader", "shadowCubeMapGeo.Shader", "shadowCubeMapFrag.Shader");
 
 	//model
 	Model crow("models/crow/scene.gltf");
@@ -137,7 +138,7 @@ int main(void)
 
 	//Light source attrib
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPosition = glm::vec3(0.5f, 0.5f, 0.5f);
+	glm::vec3 lightPosition = glm::vec3(0.0f, 50.0f, 0.0f);
 	glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
 	//send uniforms relate to light calculation
 	shader.bindProgram();
@@ -257,14 +258,19 @@ int main(void)
 
 
 	// Matrices needed for the light's perspective
-	glm::mat4 orthgonalProjection = glm::ortho(-35.0f, 35.0f, -35.0f, 35.0f, 0.1f, 75.0f);
-	glm::mat4 lightView = glm::lookAt(20.0f * lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 lightProjection = orthgonalProjection * lightView;
+	float farPlane = 1000.0f;
+	glm::mat4 orthgonalProjection = glm::ortho(-35.0f, 35.0f, -35.0f, 35.0f, 0.1f, farPlane);
+	glm::mat4 perspectiveProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, farPlane);
+	glm::mat4 lightView = glm::lookAt(lightPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 lightProjection = perspectiveProjection * lightView;
 
 	// Since the light source doenst move, only need to be done once
 	shadowMapShader.bindProgram();
 	shadowMapShader.setUniformMatrix4fv("lightProjection", lightProjection);
 	shadowMapShader.unbindProgram();
+
+
+	
 
 
 
